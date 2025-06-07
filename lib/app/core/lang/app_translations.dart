@@ -1,0 +1,53 @@
+import 'package:get/get.dart';
+
+class AppTranslations extends Translations {
+  @override
+  Map<String, Map<String, String>> get keys => {
+    'vi_VN': {
+      'app_title': 'AI Gợi Ý Đề Tài',
+      'continue_button': 'Tiếp tục & Tinh chỉnh',
+      'generate_button': 'Tạo gợi ý đề tài',
+      'interest_section_title': 'Lĩnh vực sở thích',
+      'input_info_title': 'Nhập thông tin của bạn',
+      'fetch_data': 'Lấy dữ liệu',
+      'go_to_refinement': 'Đi tới Tinh chỉnh',
+      'refinement_title': 'Tinh chỉnh thông tin',
+      'go_to_suggestion_list': 'Đi tới Danh sách gợi ý',
+      'back_to_input': 'Quay lại Nhập thông tin',
+      'start_over': 'Làm lại từ đầu',
+      'suggestion_list_title': 'Danh sách gợi ý',
+      'load_suggestions': 'Tải gợi ý',
+      'view_project_detail': 'Xem chi tiết dự án',
+      'back_to_refinement': 'Quay lại Tinh chỉnh',
+      'project_detail_title': 'Chi tiết dự án',
+      'load_project_details': 'Tải chi tiết dự án',
+      'back_to_suggestion_list': 'Quay lại Danh sách gợi ý',
+      'go_to_home_page': 'Về trang chủ',
+      'switch_to_english': 'Chuyển sang Tiếng Anh',
+      'switch_to_vietnamese': 'Chuyển sang Tiếng Việt',
+    },
+    'en_US': {
+      'app_title': 'AI Project Suggester',
+      'continue_button': 'Continue & Refine',
+      'generate_button': 'Generate Ideas',
+      'interest_section_title': 'Fields of Interest',
+      'input_info_title': 'Enter your information',
+      'fetch_data': 'Fetch Data',
+      'go_to_refinement': 'Go to Refinement',
+      'refinement_title': 'Refine Information',
+      'go_to_suggestion_list': 'Go to Suggestion List',
+      'back_to_input': 'Back to Input',
+      'start_over': 'Start Over',
+      'suggestion_list_title': 'Suggestion List',
+      'load_suggestions': 'Load Suggestions',
+      'view_project_detail': 'View Project Detail',
+      'back_to_refinement': 'Back to Refinement',
+      'project_detail_title': 'Project Detail',
+      'load_project_details': 'Load Project Details',
+      'back_to_suggestion_list': 'Back to Suggestion List',
+      'go_to_home_page': 'Go to Home Page',
+      'switch_to_english': 'Switch to English',
+      'switch_to_vietnamese': 'Switch to Vietnamese',
+    },
+  };
+} 
