@@ -4,7 +4,7 @@ class AppTranslations extends Translations {
   @override
   Map<String, Map<String, String>> get keys => {
     'vi_VN': {
-      'app_title': 'AI Gợi Ý Đề Tài',
+      'app_title': 'Minda',
       'continue_button': 'Tiếp tục & Tinh chỉnh',
       'generate_button': 'Tạo gợi ý đề tài',
       'interest_section_title': 'Lĩnh vực sở thích',
@@ -25,9 +25,22 @@ class AppTranslations extends Translations {
       'go_to_home_page': 'Về trang chủ',
       'switch_to_english': 'Chuyển sang Tiếng Anh',
       'switch_to_vietnamese': 'Chuyển sang Tiếng Việt',
+      'skip': 'Bỏ qua',
+      'next': 'Tiếp theo',
+      'start': 'Bắt đầu',
+      'previous': 'Trước',
+      'onboarding_title_1': 'Unlock the Power\nOf Future AI',
+      'onboarding_subtitle_1':
+          'Chat with the smartest AI Future\nExperience power of AI with us',
+      'onboarding_title_2': 'Chat With Your\nFavourite Ai',
+      'onboarding_subtitle_2':
+          'Chat with the smartest AI Future\nExperience power of AI with us',
+      'onboarding_title_3': 'Boost Your Mind\nPower with Ai',
+      'onboarding_subtitle_3':
+          'Chat with the smartest AI Future\nExperience power of AI with us',
     },
     'en_US': {
-      'app_title': 'AI Project Suggester',
+      'app_title': 'Minda',
       'continue_button': 'Continue & Refine',
       'generate_button': 'Generate Ideas',
       'interest_section_title': 'Fields of Interest',
@@ -48,6 +61,19 @@ class AppTranslations extends Translations {
       'go_to_home_page': 'Go to Home Page',
       'switch_to_english': 'Switch to English',
       'switch_to_vietnamese': 'Switch to Vietnamese',
+      'skip': 'Skip',
+      'next': 'Next',
+      'start': 'Start',
+      'previous': 'Previous',
+      'onboarding_title_1': 'Unlock the Power\nOf Future AI',
+      'onboarding_subtitle_1':
+          'Chat with the smartest AI Future\nExperience power of AI with us',
+      'onboarding_title_2': 'Chat With Your\nFavourite Ai',
+      'onboarding_subtitle_2':
+          'Chat with the smartest AI Future\nExperience power of AI with us',
+      'onboarding_title_3': 'Boost Your Mind\nPower with Ai',
+      'onboarding_subtitle_3':
+          'Chat with the smartest AI Future\nExperience power of AI with us',
     },
   };
-} 
+}

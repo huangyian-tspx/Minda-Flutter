@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
+import 'app/core/controllers/global_app_controller.dart';
+import 'app/core/lang/app_translations.dart';
 import 'app/core/widgets/custom_chip.dart';
 import 'app/core/widgets/error_state_widget.dart';
 import 'app/core/widgets/section_card.dart';
 import 'app/di.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
-import 'app/core/lang/app_translations.dart';
-import 'demo.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initDI();
+  Get.put(GlobalAppController(), permanent: true);
   runApp(
     ScreenUtilInit(
       designSize: const Size(375, 812),
@@ -21,7 +22,7 @@ Future<void> main() async {
       splitScreenMode: true,
       builder: (context, child) => GetMaterialApp(
         debugShowCheckedModeBanner: false,
-        initialRoute: Routes.DEMO,
+        initialRoute: Routes.SPLASH,
         getPages: AppPages.routes,
         translations: AppTranslations(),
         locale: const Locale('vi', 'VN'),
@@ -102,14 +103,12 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // navigation to other screen with back
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => DemoScreen()),
-          );
+          // Test ScrollToTop Demo
+          // Get.put(DemoScrollToTopController());
+          // Get.to(() => const DemoScrollToTopView());
         },
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        tooltip: 'Test ScrollToTop',
+        child: const Icon(Icons.arrow_upward),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }

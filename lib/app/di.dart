@@ -5,6 +5,8 @@ import 'data/services/local_storage_service.dart';
 import 'data/network/app_interceptor.dart';
 import 'data/network/rest_client.dart';
 import 'core/config/app_configs.dart';
+import 'data/services/network_connectivity_service.dart';
+import 'data/services/user_data_collection_service.dart';
 
 final sl = GetIt.instance;
 
@@ -29,4 +31,10 @@ Future<void> initDI() async {
 
   // RestClient (API client)
   sl.registerLazySingleton<RestClient>(() => RestClient(sl<Dio>()));
+
+  // NetworkConnectivityService (Singleton)
+  sl.registerSingleton<NetworkConnectivityService>(NetworkConnectivityService());
+  
+  // UserDataCollectionService (Central data collection service)
+  sl.registerLazySingleton<UserDataCollectionService>(() => UserDataCollectionService());
 } 

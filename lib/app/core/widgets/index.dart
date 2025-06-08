@@ -7,4 +7,5 @@ export 'custom_slider.dart';
 export 'custom_step_indicator.dart';
 export 'custom_text_field.dart';
 export 'custom_progress_card.dart';
-export 'styled_text.dart'; 
+export 'styled_text.dart';
+export 'scroll_to_top_fab.dart'; 
