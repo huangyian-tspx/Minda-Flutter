@@ -1,76 +1,75 @@
 import 'package:get/get.dart';
-import 'package:mind_ai_app/app/data/models/project_detail_model.dart';
-import 'expandable_item_data.dart';
-
 import '../../core/base/scrollable_page_controller.dart';
-import '../../core/utils/app_logger.dart';
-import '../../data/models/api_response.dart';
-import '../../data/repositories/topic_repository.dart';
-import '../../routes/app_routes.dart';
+import '../../data/models/topic_suggestion_model.dart';
+import 'expandable_list_controller.dart';
 
 class ProjectDetailController extends ScrollablePageController {
-  final _repository = TopicRepository();
-  var projectDetails = ProjectDetailModel(
-    id: '',
-    name: '',
-    description: '',
-  ).obs;
+  final topic = Rxn<ProjectTopic>();
+  
+  // Controllers for expandable lists
+  late final ExpandableListController coreFeaturesController;
+  late final ExpandableListController advancedFeaturesController;
 
-  // Demo data for expandable list
-  final List<ExpandableItemData> featureItems = [
-    ExpandableItemData(
-      title: 'Tính năng đăng nhập',
-      content: 'Cho phép người dùng đăng nhập bằng email, Google hoặc Apple ID. Hỗ trợ xác thực hai lớp.',
-    ),
-    ExpandableItemData(
-      title: 'Quản lý dự án',
-      content: 'Người dùng có thể tạo, chỉnh sửa, xóa và theo dõi tiến độ dự án của mình một cách trực quan.',
-    ),
-    ExpandableItemData(
-      title: 'Thông báo real-time',
-      content: 'Nhận thông báo tức thì khi có cập nhật mới về dự án hoặc khi có thành viên mới tham gia.',
-    ),
-    ExpandableItemData(
-      title: 'Báo cáo & Thống kê',
-      content: 'Cung cấp các biểu đồ, số liệu thống kê giúp người dùng đánh giá hiệu quả dự án.',
-    ),
-  ];
-
-  dynamic get projectData => Get.arguments;
-
-  void goBackToSuggestionList() {
-    Get.back();
+  @override
+  void onInit() {
+    super.onInit();
+    
+    // Initialize expandable list controllers
+    coreFeaturesController = ExpandableListController();
+    advancedFeaturesController = ExpandableListController();
+    
+    // Lấy dữ liệu được truyền từ màn hình trước
+    if (Get.arguments != null) {
+      if (Get.arguments is ProjectTopic) {
+        topic.value = Get.arguments;
+      } else if (Get.arguments is Topic) {
+        // Convert Topic to ProjectTopic
+        topic.value = ProjectTopic.fromTopic(Get.arguments);
+      }
+    }
   }
 
-  void goToHomePage() {
-    Get.offAllNamed(Routes.INFORMATION_INPUT);
+  @override
+  void onClose() {
+    coreFeaturesController.dispose();
+    advancedFeaturesController.dispose();
+    super.onClose();
   }
 
-  void loadProjectDetails() async {
-    showLoading();
+  // --- Logic cho các nút Action ---
+  void createChecklist() {
+    // TODO: Implement logic tạo checklist
+    Get.snackbar(
+      'Tính năng sắp ra mắt', 
+      'Chức năng tạo checklist sẽ sớm được cập nhật!',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
 
-    // Lấy project ID từ arguments hoặc sử dụng default
-    String projectId = '1';
-    if (projectData != null && projectData['id'] != null) {
-      projectId = projectData['id'].toString();
-    }
+  void shareToTeam() {
+    // TODO: Sử dụng package share_plus để chia sẻ nội dung
+    Get.snackbar(
+      'Tính năng sắp ra mắt', 
+      'Chức năng chia sẻ cho team sẽ sớm được cập nhật!',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
 
-    final response = await _repository.getProjectDetail(projectId);
-    hideLoading();
+  void createNotionDocs() {
+    // TODO: Implement logic tích hợp Notion (nếu có)
+    Get.snackbar(
+      'Tính năng sắp ra mắt', 
+      'Chức năng tạo tài liệu Notion sẽ sớm được cập nhật!',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
 
-    switch (response) {
-      case Success(data: final data):
-        projectDetails.value = data;
-        AppLogger.d("Load project details successfully for ID: $projectId");
-        break;
-      case Failure(error: final error):
-        AppLogger.e("Failed to load project details: ${error.error}");
-        Get.snackbar(
-          'Error',
-          'Failed to load project details: ${error.error}',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        break;
-    }
+  void suggestLibraries() {
+    // TODO: Hiển thị Get.bottomSheet với danh sách thư viện gợi ý
+    Get.snackbar(
+      'Tính năng sắp ra mắt', 
+      'Chức năng gợi ý thư viện sẽ sớm được cập nhật!',
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 }
