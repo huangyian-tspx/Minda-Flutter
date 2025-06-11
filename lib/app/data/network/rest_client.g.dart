@@ -10,7 +10,7 @@ part of 'rest_client.dart';
 
 class _RestClient implements RestClient {
   _RestClient(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'https://your-api-domain.com/api/v1';
+    baseUrl ??= 'https://openrouter.ai/api/v1';
   }
 
   final Dio _dio;

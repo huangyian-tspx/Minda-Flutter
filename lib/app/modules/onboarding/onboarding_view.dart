@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../core/base/base_view.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/dot_indicator.dart';
+import '../../routes/app_routes.dart';
 import 'onboarding_controller.dart';
 
 class OnboardingView extends GetView<OnboardingController> {
@@ -19,21 +20,44 @@ class OnboardingView extends GetView<OnboardingController> {
         body: SafeArea(
           child: Column(
             children: [
-              // Skip button
+              // Skip button and Demo access
               Align(
                 alignment: Alignment.topRight,
                 child: Padding(
-                  padding: EdgeInsets.only(top: 16.h, right: 24.w),
-                  child: TextButton(
-                    onPressed: controller.skipOnboarding,
-                    child: Text(
-                      'Skip',
-                      style: TextStyle(
-                        color: AppTheme.secondary,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
+                  padding: EdgeInsets.only(top: 16.h, right: 24.w, left: 24.w),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Demo access button (for testing)
+                      TextButton.icon(
+                        onPressed: () => Get.toNamed(Routes.DEMO),
+                        icon: Icon(
+                          Icons.code,
+                          color: AppTheme.primary,
+                          size: 16.sp,
+                        ),
+                        label: Text(
+                          'Demo',
+                          style: TextStyle(
+                            color: AppTheme.primary,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
+                      // Skip button
+                      TextButton(
+                        onPressed: controller.skipOnboarding,
+                        child: Text(
+                          'Skip',
+                          style: TextStyle(
+                            color: AppTheme.secondary,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

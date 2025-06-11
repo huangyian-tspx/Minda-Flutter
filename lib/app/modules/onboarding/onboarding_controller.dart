@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../core/base/base_controller.dart';
-import '../../di.dart';
-import '../../data/services/local_storage_service.dart';
-import '../../routes/app_routes.dart';
 import '../../core/utils/app_logger.dart';
+import '../../data/services/local_storage_service.dart';
+import '../../di.dart';
+import '../../routes/app_routes.dart';
 
 class OnboardingController extends BaseController {
   final _localStorage = sl<LocalStorageService>();
@@ -14,18 +15,21 @@ class OnboardingController extends BaseController {
   final List<Map<String, String>> onboardingPages = [
     {
       'image': 'assets/images/onboarding_01.png',
-      'title': 'Unlock the Power\nOf Future AI',
-      'subtitle': 'Chat with the smartest AI Future\nExperience power of AI with us'
+      'title': 'AI x Graduation\nStart With a Brilliant Idea',
+      'subtitle':
+          'Khơi nguồn sáng tạo từ AI\nCùng bạn định hình đề tài độc nhất',
     },
     {
       'image': 'assets/images/onboarding_02.png',
-      'title': 'Chat With Your\nFavourite Ai',
-      'subtitle': 'Chat with the smartest AI Future\nExperience power of AI with us'
+      'title': 'Tailored Topics\nFor Every Tech Passion',
+      'subtitle':
+          'Chọn công nghệ bạn yêu thích\nAI sẽ gợi ý đề tài phù hợp & thực tế',
     },
     {
       'image': 'assets/images/onboarding_03.png',
-      'title': 'Boost Your Mind\nPower with Ai',
-      'subtitle': 'Chat with the smartest AI Future\nExperience power of AI with us'
+      'title': 'From Idea to Demo\nAI Has Your Back',
+      'subtitle':
+          'Tối ưu thời gian, tăng tốc hoàn thành\nVới trợ lý AI đồng hành cùng bạn',
     },
   ];
 
@@ -72,4 +76,4 @@ class OnboardingController extends BaseController {
     pageController.dispose();
     super.onClose();
   }
-} 
+}

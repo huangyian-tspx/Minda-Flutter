@@ -152,15 +152,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   String _getMenuTitle(PopupMenuAction action) {
     switch (action) {
       case PopupMenuAction.restartFromBeginning:
-        return 'Option 1';
+        return 'Tạo lại từ đầu';
       case PopupMenuAction.settings:
-        return 'Option 2';
+        return 'Cài đặt';
       case PopupMenuAction.favoriteProjects:
-        return 'Option 3';
+        return 'Dự án yêu thích';
       case PopupMenuAction.changeLanguage:
-        return 'Option 4';
+        return 'Thay đổi ngôn ngữ';
       case PopupMenuAction.changeTheme:
-        return 'Option 5';
+        return 'Dark/Light';
+      case PopupMenuAction.historyNotion:
+        return "Lịch sử tạo Notion";
     }
   }
 
@@ -180,6 +182,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           color: Colors.grey,
           size: 24,
         );
+      case PopupMenuAction.historyNotion:
+        return const Icon(Icons.history, color: Colors.grey, size: 24);
     }
   }
 }

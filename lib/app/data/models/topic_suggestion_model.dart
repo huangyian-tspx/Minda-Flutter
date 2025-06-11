@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../core/widgets/code_viewer.dart';
 import '../../modules/04_project_detail/expandable_item_data.dart';
 import 'knowledge_item.dart';
 
@@ -24,12 +25,27 @@ class TopicSuggestionModel {
 }
 
 @JsonSerializable()
+class Technology {
+  final String name;
+  final String description;
+
+  Technology({required this.name, required this.description});
+
+  factory Technology.fromJson(Map<String, dynamic> json) =>
+      _$TechnologyFromJson(json);
+  Map<String, dynamic> toJson() => _$TechnologyToJson(this);
+}
+
+@JsonSerializable()
 class Topic {
   final String id;
   final String title;
   final String description;
-  final List<String> technologies;
+  final List<Technology> technologies;
   final String difficulty;
+  final int matchScore; // 0-100
+  final int duration; // months
+  final String feasibilityAssessment;
 
   Topic({
     required this.id,
@@ -37,22 +53,31 @@ class Topic {
     required this.description,
     required this.technologies,
     required this.difficulty,
+    required this.matchScore,
+    required this.duration,
+    required this.feasibilityAssessment,
   });
 
   factory Topic.fromJson(Map<String, dynamic> json) => _$TopicFromJson(json);
-
   Map<String, dynamic> toJson() => _$TopicToJson(this);
+
+  // Helper getter để lấy list tên technologies (backward compatibility)
+  List<String> get technologyNames => technologies.map((t) => t.name).toList();
 }
 
 /// Extended version of Topic for detailed project view
 class ProjectTopic extends Topic {
   final String problemStatement;
   final String proposedSolution;
-  final List<String> coreTechStack;
+  final List<Technology> coreTechStack;
   final List<ExpandableItemData> coreFeatures;
   final List<ExpandableItemData> advancedFeatures;
   final List<String> foundationalKnowledge;
   final List<KnowledgeItem> specificKnowledge;
+  final List<String> implementationSteps;
+  final List<CodeExample> codeExamples;
+  final List<String> potentialChallenges;
+  final List<String> resourcesAndTutorials;
 
   ProjectTopic({
     required super.id,
@@ -67,7 +92,101 @@ class ProjectTopic extends Topic {
     required this.advancedFeatures,
     required this.foundationalKnowledge,
     required this.specificKnowledge,
+    required super.matchScore,
+    required super.duration,
+    required super.feasibilityAssessment,
+    this.implementationSteps = const [],
+    this.codeExamples = const [],
+    this.potentialChallenges = const [],
+    this.resourcesAndTutorials = const [],
   });
+
+  /// Create ProjectTopic from AI JSON response
+  /// 
+  /// Parse detailed project information từ OpenRouter AI response
+  /// 
+  /// [json] JSON response từ AI
+  /// [basicTopic] Basic topic info để retain original data
+  factory ProjectTopic.fromJson(Map<String, dynamic> json, Topic basicTopic) {
+    // Parse core features
+    final coreFeaturesList = (json['coreFeatures'] as List<dynamic>?)
+        ?.map((item) => ExpandableItemData(
+              title: item['title']?.toString() ?? '',
+              content: item['content']?.toString() ?? '',
+            ))
+        .toList() ?? [];
+
+    // Parse advanced features
+    final advancedFeaturesList = (json['advancedFeatures'] as List<dynamic>?)
+        ?.map((item) => ExpandableItemData(
+              title: item['title']?.toString() ?? '',
+              content: item['content']?.toString() ?? '',
+            ))
+        .toList() ?? [];
+
+    // Parse foundational knowledge
+    final foundationalKnowledgeList = (json['foundationalKnowledge'] as List<dynamic>?)
+        ?.map((item) => item.toString())
+        .toList() ?? [];
+
+    // Parse specific knowledge
+    final specificKnowledgeList = (json['specificKnowledge'] as List<dynamic>?)
+        ?.map((item) {
+          final difficultyStr = item['difficulty']?.toString().toLowerCase() ?? 'easy';
+          KnowledgeDifficulty difficulty;
+          switch (difficultyStr) {
+            case 'medium':
+              difficulty = KnowledgeDifficulty.medium;
+              break;
+            case 'hard':
+              difficulty = KnowledgeDifficulty.hard;
+              break;
+            default:
+              difficulty = KnowledgeDifficulty.easy;
+          }
+          
+          return KnowledgeItem(
+            title: item['title']?.toString() ?? '',
+            difficulty: difficulty,
+          );
+        })
+        .toList() ?? [];
+
+    // Parse implementation steps
+    final implementationStepsList = (json['implementationSteps'] as List<dynamic>?)
+        ?.map((item) => item.toString())
+        .toList() ?? [];
+
+    // Parse code examples
+    final codeExamplesList = (json['codeExamples'] as List<dynamic>?)
+        ?.map((item) => CodeExample.fromJson(item as Map<String, dynamic>))
+        .toList() ?? [];
+
+    return ProjectTopic(
+      id: basicTopic.id,
+      title: basicTopic.title,
+      description: basicTopic.description,
+      technologies: basicTopic.technologies,
+      difficulty: basicTopic.difficulty,
+      matchScore: basicTopic.matchScore,
+      duration: basicTopic.duration,
+      feasibilityAssessment: basicTopic.feasibilityAssessment,
+      problemStatement: json['problemStatement']?.toString() ?? 
+          "Vấn đề cần giải quyết cho dự án ${basicTopic.title}",
+      proposedSolution: json['proposedSolution']?.toString() ?? 
+          "Hướng tiếp cận của dự án: ${basicTopic.description}",
+      coreTechStack: basicTopic.technologies,
+      coreFeatures: coreFeaturesList,
+      advancedFeatures: advancedFeaturesList,
+      foundationalKnowledge: foundationalKnowledgeList,
+      specificKnowledge: specificKnowledgeList,
+      implementationSteps: implementationStepsList,
+      codeExamples: codeExamplesList,
+      // Default empty arrays for removed fields
+      potentialChallenges: const [],
+      resourcesAndTutorials: const [],
+    );
+  }
 
   /// Convert a regular Topic to ProjectTopic with sample data
   factory ProjectTopic.fromTopic(Topic topic) {
@@ -80,6 +199,9 @@ class ProjectTopic extends Topic {
       problemStatement: "Vấn đề cần giải quyết cho dự án ${topic.title}",
       proposedSolution: "Hướng tiếp cận của dự án: ${topic.description}",
       coreTechStack: topic.technologies,
+      matchScore: topic.matchScore,
+      duration: topic.duration,
+      feasibilityAssessment: topic.feasibilityAssessment,
       coreFeatures: [
         ExpandableItemData(
           title: 'Lập trình Dart cơ bản',
@@ -115,6 +237,26 @@ class ProjectTopic extends Topic {
         KnowledgeItem(
           title: 'State Management nâng cao',
           difficulty: KnowledgeDifficulty.hard,
+        ),
+      ],
+      codeExamples: [
+        CodeExample(
+          title: 'Basic Widget Setup',
+          description: 'Khởi tạo widget cơ bản cho dự án',
+          code: '''class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: '${topic.title}',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: MyHomePage(),
+    );
+  }
+}''',
+          language: 'dart',
+          explanation: 'Code này tạo ra widget chính của ứng dụng Flutter với MaterialApp làm root widget.',
         ),
       ],
     );

@@ -6,7 +6,6 @@ import '../../core/base/base_view.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/values/app_constants.dart';
 import '../../core/values/app_enums.dart';
-import '../../core/widgets/custom_app_bar.dart';
 import '../../core/widgets/index.dart';
 import 'information_input_controller.dart';
 
@@ -118,6 +117,7 @@ class InformationInputView extends GetView<InformationInputController> {
             popupActions: const [
               PopupMenuAction.changeTheme,
               PopupMenuAction.changeLanguage,
+              PopupMenuAction.historyNotion,
             ],
             onPopupActionSelected: controller.handleAppBarAction,
           ),

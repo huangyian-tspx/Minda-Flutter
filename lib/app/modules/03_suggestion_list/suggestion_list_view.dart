@@ -21,8 +21,16 @@ class SuggestionListView extends GetView<SuggestionListController> {
       title: 'Ứng dụng di động Tìm Gia Sư bằng Flutter',
       description:
           'Ứng dụng giúp kết nối học viên và gia sư, tích hợp chat, thanh toán, và quản lý lịch học.',
-      technologies: ['Flutter', 'Firebase', 'API', 'Maps API'],
+      technologies: [
+        Technology(name: 'Flutter', description: 'Framework UI đa nền tảng dễ học, phù hợp cho người mới bắt đầu'),
+        Technology(name: 'Firebase', description: 'Nền tảng backend-as-a-service của Google, dễ tích hợp'),
+        Technology(name: 'API', description: 'Giao tiếp dữ liệu giữa client và server'),
+        Technology(name: 'Maps API', description: 'Tích hợp bản đồ và định vị GPS'),
+      ],
       difficulty: 'An toàn, phù hợp qua môn',
+      matchScore: 85,
+      duration: 3,
+      feasibilityAssessment: 'Khả thi cao, tài liệu phong phú, cộng đồng hỗ trợ tốt',
     );
     return BaseView(
       controller: controller,
@@ -70,17 +78,27 @@ class SuggestionListView extends GetView<SuggestionListController> {
                     // }
                     return ListView.builder(
                       controller: controller.scrollController, // GẮN SCROLL CONTROLLER
-                      itemCount: 3,
+                      itemCount: controller.filteredSuggestionList.isEmpty ? 3 : controller.filteredSuggestionList.length,
                       // shrinkWrap: true,
                       // physics: const NeverScrollableScrollPhysics(),
                       padding: EdgeInsets.only(top: 10),
                       itemBuilder: (context, index) {
+                        final listToShow = controller.filteredSuggestionList;
+                        if (listToShow.isEmpty) {
+                          // Show demo topic if no real data
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            child: SuggestionProjectCard(
+                              topic: demoTopic,
+                            ),
+                          );
+                        }
+                        
+                        final topic = listToShow[index % listToShow.length];
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 20),
                           child: SuggestionProjectCard(
-                            topic: demoTopic,
-                            matchScore: 0.95,
-                            duration: 3,
+                            topic: topic,
                           ),
                         );
                       },

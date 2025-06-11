@@ -24,14 +24,28 @@ Map<String, dynamic> _$TopicSuggestionModelToJson(
   'success': instance.success,
 };
 
+Technology _$TechnologyFromJson(Map<String, dynamic> json) => Technology(
+  name: json['name'] as String,
+  description: json['description'] as String,
+);
+
+Map<String, dynamic> _$TechnologyToJson(Technology instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'description': instance.description,
+    };
+
 Topic _$TopicFromJson(Map<String, dynamic> json) => Topic(
   id: json['id'] as String,
   title: json['title'] as String,
   description: json['description'] as String,
   technologies: (json['technologies'] as List<dynamic>)
-      .map((e) => e as String)
+      .map((e) => Technology.fromJson(e as Map<String, dynamic>))
       .toList(),
   difficulty: json['difficulty'] as String,
+  matchScore: (json['matchScore'] as num).toInt(),
+  duration: (json['duration'] as num).toInt(),
+  feasibilityAssessment: json['feasibilityAssessment'] as String,
 );
 
 Map<String, dynamic> _$TopicToJson(Topic instance) => <String, dynamic>{
@@ -40,4 +54,7 @@ Map<String, dynamic> _$TopicToJson(Topic instance) => <String, dynamic>{
   'description': instance.description,
   'technologies': instance.technologies,
   'difficulty': instance.difficulty,
+  'matchScore': instance.matchScore,
+  'duration': instance.duration,
+  'feasibilityAssessment': instance.feasibilityAssessment,
 };

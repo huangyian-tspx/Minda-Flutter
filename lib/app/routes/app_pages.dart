@@ -1,20 +1,23 @@
 import 'package:get/get.dart';
-import 'app_routes.dart';
-import '../modules/splash/splash_view.dart';
-import '../modules/splash/splash_binding.dart';
-import '../modules/onboarding/onboarding_view.dart';
-import '../modules/onboarding/onboarding_binding.dart';
-import '../modules/01_information_input/information_input_view.dart';
+
 import '../modules/01_information_input/information_input_binding.dart';
-import '../modules/02_refinement/refinement_view.dart';
+import '../modules/01_information_input/information_input_view.dart';
 import '../modules/02_refinement/refinement_binding.dart';
-import '../modules/ai_thinking/ai_thinking_view.dart';
-import '../modules/ai_thinking/ai_thinking_binding.dart';
-import '../modules/03_suggestion_list/suggestion_list_view.dart';
+import '../modules/02_refinement/refinement_view.dart';
 import '../modules/03_suggestion_list/suggestion_list_binding.dart';
-import '../modules/04_project_detail/project_detail_view.dart';
+import '../modules/03_suggestion_list/suggestion_list_view.dart';
 import '../modules/04_project_detail/project_detail_binding.dart';
-import '../../demo.dart';
+import '../modules/04_project_detail/project_detail_view.dart';
+import '../modules/ai_thinking/ai_thinking_binding.dart';
+import '../modules/ai_thinking/ai_thinking_view.dart';
+import '../modules/demo_scroll_to_top.dart';
+import '../modules/notion_history/notion_history_controller.dart';
+import '../modules/notion_history/notion_history_view.dart';
+import '../modules/onboarding/onboarding_binding.dart';
+import '../modules/onboarding/onboarding_view.dart';
+import '../modules/splash/splash_binding.dart';
+import '../modules/splash/splash_view.dart';
+import 'app_routes.dart';
 
 class AppPages {
   static final routes = [
@@ -55,7 +58,17 @@ class AppPages {
     ),
     GetPage(
       name: Routes.DEMO,
-      page: () => DemoScreen(),
+      page: () => const CodeViewerDemoView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => CodeViewerDemoController());
+      }),
+    ),
+    GetPage(
+      name: Routes.NOTION_HISTORY,
+      page: () => NotionHistoryView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => NotionHistoryController());
+      }),
     ),
   ];
-} 
+}

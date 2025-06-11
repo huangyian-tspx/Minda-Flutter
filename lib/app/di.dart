@@ -7,6 +7,8 @@ import 'data/network/rest_client.dart';
 import 'core/config/app_configs.dart';
 import 'data/services/network_connectivity_service.dart';
 import 'data/services/user_data_collection_service.dart';
+import 'data/services/ai_prompt_service.dart';
+import 'data/services/openrouter_api_service.dart';
 
 final sl = GetIt.instance;
 
@@ -36,5 +38,9 @@ Future<void> initDI() async {
   sl.registerSingleton<NetworkConnectivityService>(NetworkConnectivityService());
   
   // UserDataCollectionService (Central data collection service)
-  sl.registerLazySingleton<UserDataCollectionService>(() => UserDataCollectionService());
+  sl.registerSingleton<UserDataCollectionService>(UserDataCollectionService());
+  
+  // AI Services
+  sl.registerLazySingleton<AIPromptService>(() => AIPromptService.instance);
+  sl.registerLazySingleton<OpenRouterAPIService>(() => OpenRouterAPIService.instance);
 } 

@@ -4,4 +4,5 @@ enum PopupMenuAction {
   settings,
   restartFromBeginning,
   favoriteProjects,
-} 
+  historyNotion,
+}

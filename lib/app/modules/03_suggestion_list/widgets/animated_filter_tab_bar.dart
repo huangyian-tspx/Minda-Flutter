@@ -26,10 +26,19 @@ class AnimatedFilterTabBar extends GetView<SuggestionListController> {
       child: Obx(() {
         final selectedIndex =
             controller.selectedFilter.value == SuggestionFilter.safe ? 0 : 1;
+        
+        // Get counts for each category
+        final safeCount = controller.aiResponseData.value?.safeProjects.length ?? 0;
+        final challengingCount = controller.aiResponseData.value?.challengingProjects.length ?? 0;
+        final counts = [safeCount, challengingCount];
+        
         return Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: List.generate(tabCount, (i) {
             final isSelected = selectedIndex == i;
+            final count = counts[i];
+            final displayText = count > 0 ? '${tabs[i]} ($count)' : tabs[i];
+            
             return GestureDetector(
               onTap: () => controller.onFilterChanged(
                 i == 0 ? SuggestionFilter.safe : SuggestionFilter.challenging,
@@ -38,8 +47,8 @@ class AnimatedFilterTabBar extends GetView<SuggestionListController> {
                 duration: animationDuration,
                 curve: Curves.easeInOut,
                 margin: EdgeInsets.only(
-                  right: i < tabCount - 1 ? 0 : 0,
-                ), // No spacing between tabs
+                  right: i < tabCount - 1 ? 20 : 0,
+                ), // Add spacing between tabs
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
                   vertical: 10,
@@ -58,7 +67,7 @@ class AnimatedFilterTabBar extends GetView<SuggestionListController> {
                           : FontWeight.normal,
                       color: isSelected ? AppTheme.primary : AppTheme.secondary,
                     ),
-                    child: Text(tabs[i]),
+                    child: Text(displayText),
                   ),
                 ),
               ),

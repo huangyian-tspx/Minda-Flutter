@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart';
+import 'package:mind_ai_app/app/data/models/api_error.dart';
 import 'package:mind_ai_app/app/data/models/project_detail_model.dart';
 
 import '../../di.dart';
@@ -15,7 +15,7 @@ class TopicRepository {
     try {
       final response = await _restClient.generateTopics(params);
       return Success(response);
-    } on DioException catch (e) {
+    } on ApiError catch (e) {
       return Failure(e);
     }
   }
@@ -26,7 +26,7 @@ class TopicRepository {
     try {
       final response = await _restClient.searchTopics(queries);
       return Success(response);
-    } on DioException catch (e) {
+    } on ApiError catch (e) {
       return Failure(e);
     }
   }
@@ -37,7 +37,7 @@ class TopicRepository {
     try {
       final response = await _restClient.getProjectDetail(projectId);
       return Success(response);
-    } on DioException catch (e) {
+    } on ApiError catch (e) {
       return Failure(e);
     }
   }

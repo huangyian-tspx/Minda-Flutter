@@ -1,5 +1,6 @@
-import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/base/base_controller.dart';
 import '../../core/utils/app_logger.dart';
@@ -21,6 +22,16 @@ class InformationInputController extends BaseController {
     AppLogger.d("InformationInputController initialized");
     // Log current state for debugging
     collectionService.logCurrentState();
+  }
+
+  Future<void> openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      // Có thể show snackbar hoặc log lỗi
+      print('Không thể mở link: $url');
+    }
   }
 
   // Level selection methods
@@ -104,7 +115,9 @@ class InformationInputController extends BaseController {
           TextButton(
             onPressed: () {
               if (textController.text.trim().isNotEmpty) {
-                collectionService.addCustomTechnology(textController.text.trim());
+                collectionService.addCustomTechnology(
+                  textController.text.trim(),
+                );
                 Get.back();
               }
             },
@@ -122,10 +135,10 @@ class InformationInputController extends BaseController {
   // Validation and navigation
   void navigateToRefinement() {
     AppLogger.d("Attempting to navigate to refinement step");
-    
+
     // Get current user input for validation
     final userInput = collectionService.userInput.value;
-    
+
     // Validate Step 1 requirements
     if (userInput.level == null) {
       AppLogger.e("Validation failed: No level selected");
@@ -202,13 +215,14 @@ class InformationInputController extends BaseController {
   // Get selection counts for UI feedback
   int get selectedInterestsCount =>
       collectionService.userInput.value.interests.length;
-  
+
   int get selectedTechnologiesCount =>
       collectionService.userInput.value.technologies.length;
 
   bool get hasSelectedLevel => collectionService.userInput.value.level != null;
-  bool get hasSelectedMainGoal => collectionService.userInput.value.mainGoal != null;
-  
+  bool get hasSelectedMainGoal =>
+      collectionService.userInput.value.mainGoal != null;
+
   bool get canProceed => collectionService.isStep1Valid();
 
   // Get all available options (default + custom)

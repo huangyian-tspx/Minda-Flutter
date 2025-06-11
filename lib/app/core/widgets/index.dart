@@ -11,4 +11,5 @@ export 'knowledge_difficulty_card.dart';
 export 'scroll_to_top_fab.dart';
 export 'section_card.dart';
 export 'skeleton_loader.dart';
-export 'styled_text.dart'; 
+export 'styled_text.dart';
+export 'typewriter_text.dart'; 

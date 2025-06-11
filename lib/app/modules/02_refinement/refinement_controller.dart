@@ -4,9 +4,12 @@ import 'package:get/get.dart';
 import '../../core/base/base_controller.dart';
 import '../../core/utils/app_logger.dart';
 import '../../core/values/app_constants.dart';
+import '../../data/models/api_response.dart';
+import '../../data/services/openrouter_api_service.dart';
 import '../../data/services/user_data_collection_service.dart';
 import '../../di.dart';
 import '../../routes/app_routes.dart';
+import '../ai_thinking/ai_thinking_controller.dart';
 
 /// Controller for Refinement (Step 2) screen
 /// Manages additional project details and finalizes user input collection
@@ -164,14 +167,9 @@ class RefinementController extends BaseController {
       final promptData = userInput.toJson();
       AppLogger.i("Final User Input Data: $promptData");
 
-      // 3. Simulate API processing time (replace with real API call)
-      AppLogger.d("Starting API simulation");
-      await _simulateAPICall();
-
-      // 4. When API completes, navigate to suggestion list
-      // Use offNamed so user can't go back to AI thinking screen
-      AppLogger.d("API completed, navigating to suggestion list");
-      Get.offNamed(Routes.SUGGESTION_LIST);
+      // 3. Call real OpenRouter API
+      AppLogger.d("Starting OpenRouter API call");
+      await _callOpenRouterAPI();
     } catch (error) {
       AppLogger.e("Error during submission: $error");
 
@@ -188,19 +186,87 @@ class RefinementController extends BaseController {
     }
   }
 
-  /// Simulate API call with realistic timing
-  /// Replace this with actual API integration
-  Future<void> _simulateAPICall() async {
-    AppLogger.d("Simulating API call...");
+  /// Call OpenRouter API để generate project suggestions
+  Future<void> _callOpenRouterAPI() async {
+    try {
+      AppLogger.d("Calling OpenRouter API...");
 
-    // Simulate network delay (3-6 seconds for realistic feel)
-    await Future.delayed(const Duration(seconds: 4));
+      // Update thinking message nếu có thể
+      if (Get.isRegistered<AIThinkingController>()) {
+        final thinkingController = Get.find<AIThinkingController>();
+        thinkingController.updateMessage("Đang gửi thông tin đến AI...");
+      }
 
-    // Here you would normally call your API:
-    // final response = await apiService.generateSuggestions(promptData);
-    // Handle the response and store results
+      // Call OpenRouter API
+      final response = await OpenRouterAPIService.instance
+          .generateProjectSuggestions();
 
-    AppLogger.d("API simulation completed");
+      switch (response) {
+        case Success(data: final suggestionData):
+          AppLogger.d(
+            "API call successful! Got ${suggestionData.topics.length} suggestions",
+          );
+
+          // Update thinking message
+          if (Get.isRegistered<AIThinkingController>()) {
+            final thinkingController = Get.find<AIThinkingController>();
+            thinkingController.updateMessage(
+              "Đã nhận được ${suggestionData.topics.length} đề xuất dự án!",
+            );
+          }
+
+          // Wait a bit để user thấy success message
+          await Future.delayed(const Duration(milliseconds: 1500));
+
+          // Navigate to suggestion list with data
+          AppLogger.d("Navigating to suggestion list");
+          Get.offNamed(Routes.SUGGESTION_LIST, arguments: suggestionData);
+          break;
+
+        case Failure(error: final error):
+          AppLogger.e("API call failed: ${error.message}");
+
+          // Update thinking message với error
+          if (Get.isRegistered<AIThinkingController>()) {
+            final thinkingController = Get.find<AIThinkingController>();
+            thinkingController.updateMessage(
+              "Đã có lỗi xảy ra: ${error.message}",
+            );
+          }
+
+          // Wait để user đọc error message
+          await Future.delayed(const Duration(seconds: 2));
+
+          // Go back to refinement screen
+          Get.back();
+
+          // Show error snackbar
+          Get.snackbar(
+            'Lỗi AI',
+            error.message,
+            snackPosition: SnackPosition.TOP,
+            duration: const Duration(seconds: 5),
+          );
+          break;
+      }
+    } catch (e) {
+      AppLogger.e("Unexpected error in API call: $e");
+
+      // Update thinking message với error
+      if (Get.isRegistered<AIThinkingController>()) {
+        final thinkingController = Get.find<AIThinkingController>();
+        thinkingController.updateMessage("Lỗi không xác định: ${e.toString()}");
+      }
+
+      await Future.delayed(const Duration(seconds: 2));
+      Get.back();
+
+      Get.snackbar(
+        'Lỗi',
+        'Đã có lỗi không xác định. Vui lòng thử lại.',
+        snackPosition: SnackPosition.TOP,
+      );
+    }
   }
 
   // Helper getters for the view

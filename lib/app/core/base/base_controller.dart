@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+
+import '../../routes/app_routes.dart';
 import '../values/app_enums.dart';
 
 class BaseController extends GetxController {
@@ -16,9 +18,12 @@ class BaseController extends GetxController {
       case PopupMenuAction.changeLanguage:
         // TODO: Implement language change logic
         break;
+      case PopupMenuAction.historyNotion:
+        Get.toNamed(Routes.NOTION_HISTORY);
+        break;
       default:
         // Child controllers can override
         break;
     }
   }
-} 
+}

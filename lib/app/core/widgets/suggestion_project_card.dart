@@ -9,14 +9,10 @@ import '../values/app_sizes.dart';
 
 class SuggestionProjectCard extends StatelessWidget {
   final Topic topic;
-  final double? matchScore; // 0.0 - 1.0, optional for demo
-  final int? duration; // months, optional for demo
 
   const SuggestionProjectCard({
     Key? key,
     required this.topic,
-    this.matchScore,
-    this.duration,
   }) : super(key: key);
 
   @override
@@ -86,11 +82,14 @@ class SuggestionProjectCard extends StatelessWidget {
                 children: topic.technologies
                     .map(
                       (tech) => GestureDetector(
-                        onTap: () =>
-                            _showDetailBottomSheet(context, 'Công nghệ', tech),
+                        onTap: () => _showDetailBottomSheet(
+                          context, 
+                          'Công nghệ: ${tech.name}', 
+                          tech.description,
+                        ),
                         child: Chip(
                           label: Text(
-                            tech,
+                            tech.name,
                             style: TextStyle(
                               color: AppTheme.primary,
                               fontSize: 13,
@@ -141,24 +140,24 @@ class SuggestionProjectCard extends StatelessWidget {
                   ),
                   Flexible(
                     flex: 0,
-                    child: GestureDetector(
-                      onTap: () => _showDetailBottomSheet(
-                        context,
-                        'Độ phù hợp',
-                        '${((matchScore ?? 0.85) * 100).toStringAsFixed(0)}% phù hợp với bạn dựa trên AI',
-                      ),
-                      child: CustomProgressCard(
-                        progressValue: (matchScore ?? 0.85).clamp(0.0, 1.0),
-                        size: 56,
-                        strokeWidth: 7,
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primary,
+                                          child: GestureDetector(
+                        onTap: () => _showDetailBottomSheet(
+                          context,
+                          'Độ phù hợp',
+                          '${topic.matchScore}% phù hợp với bạn dựa trên AI\n\nĐánh giá khả thi: ${topic.feasibilityAssessment}',
                         ),
-                        gradientColors: [AppTheme.primary, AppTheme.secondary],
+                        child: CustomProgressCard(
+                          progressValue: (topic.matchScore / 100.0).clamp(0.0, 1.0),
+                          size: 56,
+                          strokeWidth: 7,
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primary,
+                          ),
+                          gradientColors: [AppTheme.primary, AppTheme.secondary],
+                        ),
                       ),
-                    ),
                   ),
                 ],
               ),
@@ -222,7 +221,7 @@ class SuggestionProjectCard extends StatelessWidget {
                       onTap: () => _showDetailBottomSheet(
                         context,
                         'Thời gian thực hiện',
-                        '${duration ?? 3} months',
+                        '${topic.duration} tháng để hoàn thành dự án\n\nĐánh giá khả thi: ${topic.feasibilityAssessment}',
                       ),
                       child: Chip(
                         avatar: const Icon(
@@ -231,7 +230,7 @@ class SuggestionProjectCard extends StatelessWidget {
                           color: AppTheme.primary,
                         ),
                         label: Text(
-                          '${duration ?? 3} months',
+                          '${topic.duration} months',
                           style: Theme.of(context).chipTheme.labelStyle,
                         ),
                         backgroundColor: AppTheme.chipInactive,
