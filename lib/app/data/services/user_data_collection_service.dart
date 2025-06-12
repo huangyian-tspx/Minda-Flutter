@@ -1,7 +1,8 @@
 import 'package:get/get.dart';
-import '../models/user_input_data.dart';
+
 import '../../core/utils/app_logger.dart';
 import '../../core/values/app_constants.dart';
+import '../models/user_input_data.dart';
 
 /// Central service for collecting and managing user input data throughout the flow
 /// This service acts as a single source of truth for all user inputs
@@ -53,7 +54,8 @@ class UserDataCollectionService {
   }
 
   void addCustomMainGoal(String customGoal) {
-    if (customGoal.trim().isNotEmpty && !customMainGoals.contains(customGoal.trim())) {
+    if (customGoal.trim().isNotEmpty &&
+        !customMainGoals.contains(customGoal.trim())) {
       AppLogger.d("Adding custom main goal: $customGoal");
       customMainGoals.add(customGoal.trim());
       updateMainGoal(customGoal.trim());
@@ -93,7 +95,8 @@ class UserDataCollectionService {
   }
 
   void addCustomTechnology(String customTech) {
-    if (customTech.trim().isNotEmpty && !customTechnologies.contains(customTech.trim())) {
+    if (customTech.trim().isNotEmpty &&
+        !customTechnologies.contains(customTech.trim())) {
       AppLogger.d("Adding custom technology: $customTech");
       customTechnologies.add(customTech.trim());
       // Also select it
@@ -154,7 +157,8 @@ class UserDataCollectionService {
   }
 
   void addCustomProductType(String customType) {
-    if (customType.trim().isNotEmpty && !customProductTypes.contains(customType.trim())) {
+    if (customType.trim().isNotEmpty &&
+        !customProductTypes.contains(customType.trim())) {
       AppLogger.d("Adding custom product type: $customType");
       customProductTypes.add(customType.trim());
       // Also select it
@@ -184,19 +188,74 @@ class UserDataCollectionService {
 
   // Special requirements management
   void updateSpecialRequirements(String text) {
-    AppLogger.d("Updating special requirements: ${text.length > 50 ? text.substring(0, 50) + '...' : text}");
+    AppLogger.d(
+      "Updating special requirements: ${text.length > 50 ? text.substring(0, 50) + '...' : text}",
+    );
     userInput.update((val) {
       val?.specialRequirements = text.trim().isEmpty ? null : text.trim();
     });
   }
 
-  // Problem to solve management  
+  // Problem to solve management
   void updateProblemToSolve(String text) {
-    AppLogger.d("Updating problem to solve: ${text.length > 50 ? text.substring(0, 50) + '...' : text}");
+    AppLogger.d(
+      "Updating problem to solve: ${text.length > 50 ? text.substring(0, 50) + '...' : text}",
+    );
     userInput.update((val) {
       val?.problemToSolve = text.trim().isEmpty ? null : text.trim();
     });
   }
+
+  // ========== TEAM SIZE MANAGEMENT ==========
+
+  /// Update team size với validation
+  void updateTeamSize(int size) {
+    AppLogger.d("Updating team size: $size");
+
+    // Validate team size range
+    if (size < 1) {
+      AppLogger.e("Invalid team size: $size (minimum: 1)");
+      size = 1;
+    } else if (size > 10) {
+      AppLogger.e("Invalid team size: $size (maximum: 10)");
+      size = 10;
+    }
+
+    userInput.update((val) {
+      val?.teamSize = size;
+    });
+
+    AppLogger.d(
+      "Team size updated to: $size (${userInput.value.teamSizeDescription})",
+    );
+  }
+
+  /// Increment team size với validation
+  void incrementTeamSize() {
+    final currentSize = userInput.value.teamSize;
+    if (currentSize < 10) {
+      updateTeamSize(currentSize + 1);
+    } else {
+      AppLogger.d("Cannot increment team size: already at maximum (10)");
+    }
+  }
+
+  /// Decrement team size với validation
+  void decrementTeamSize() {
+    final currentSize = userInput.value.teamSize;
+    if (currentSize > 1) {
+      updateTeamSize(currentSize - 1);
+    } else {
+      AppLogger.d("Cannot decrement team size: already at minimum (1)");
+    }
+  }
+
+  /// Get team size context for UI
+  String get teamSizeDescription => userInput.value.teamSizeDescription;
+  bool get isSoloProject => userInput.value.isSoloProject;
+  bool get isSmallTeam => userInput.value.isSmallTeam;
+  bool get isLargeTeam => userInput.value.isLargeTeam;
+  int get currentTeamSize => userInput.value.teamSize;
 
   // Validation methods
   bool isStep1Valid() => userInput.value.isStep1Valid();
@@ -223,6 +282,7 @@ class UserDataCollectionService {
       productTypes: Set<String>.from(userInput.value.productTypes),
       specialRequirements: userInput.value.specialRequirements,
       problemToSolve: userInput.value.problemToSolve,
+      teamSize: userInput.value.teamSize,
     );
   }
 
@@ -232,5 +292,8 @@ class UserDataCollectionService {
     AppLogger.d("Custom main goals: $customMainGoals");
     AppLogger.d("Custom technologies: $customTechnologies");
     AppLogger.d("Custom product types: $customProductTypes");
+    AppLogger.d(
+      "Team context: ${teamSizeDescription} (${currentTeamSize} members)",
+    );
   }
-} 
+}

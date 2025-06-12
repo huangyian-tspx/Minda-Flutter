@@ -82,6 +82,7 @@ class InformationInputView extends GetView<InformationInputController> {
             ],
           ),
         ),
+        floatingActionButton: GlobalFloatingMenu(),
       ),
     );
   }

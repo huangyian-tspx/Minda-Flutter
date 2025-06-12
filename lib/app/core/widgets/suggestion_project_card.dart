@@ -10,10 +10,8 @@ import '../values/app_sizes.dart';
 class SuggestionProjectCard extends StatelessWidget {
   final Topic topic;
 
-  const SuggestionProjectCard({
-    Key? key,
-    required this.topic,
-  }) : super(key: key);
+  const SuggestionProjectCard({Key? key, required this.topic})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +31,7 @@ class SuggestionProjectCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top row: Title + Bookmark
+              // Top row: Title
               GestureDetector(
                 onTap: () =>
                     _showDetailBottomSheet(context, 'Tên dự án', topic.title),
@@ -56,21 +54,6 @@ class SuggestionProjectCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    // Bookmark icon
-                    Obx(
-                      () => IconButton(
-                        icon: Icon(
-                          controller.isFavorite(topic.id)
-                              ? Icons.bookmark_rounded
-                              : Icons.bookmark_outline_rounded,
-                          color: controller.isFavorite(topic.id)
-                              ? AppTheme.primary
-                              : AppTheme.secondary,
-                        ),
-                        onPressed: () => controller.toggleFavorite(topic.id),
-                        splashRadius: 22,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -83,8 +66,8 @@ class SuggestionProjectCard extends StatelessWidget {
                     .map(
                       (tech) => GestureDetector(
                         onTap: () => _showDetailBottomSheet(
-                          context, 
-                          'Công nghệ: ${tech.name}', 
+                          context,
+                          'Công nghệ: ${tech.name}',
                           tech.description,
                         ),
                         child: Chip(
@@ -140,24 +123,27 @@ class SuggestionProjectCard extends StatelessWidget {
                   ),
                   Flexible(
                     flex: 0,
-                                          child: GestureDetector(
-                        onTap: () => _showDetailBottomSheet(
-                          context,
-                          'Độ phù hợp',
-                          '${topic.matchScore}% phù hợp với bạn dựa trên AI\n\nĐánh giá khả thi: ${topic.feasibilityAssessment}',
-                        ),
-                        child: CustomProgressCard(
-                          progressValue: (topic.matchScore / 100.0).clamp(0.0, 1.0),
-                          size: 56,
-                          strokeWidth: 7,
-                          textStyle: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primary,
-                          ),
-                          gradientColors: [AppTheme.primary, AppTheme.secondary],
-                        ),
+                    child: GestureDetector(
+                      onTap: () => _showDetailBottomSheet(
+                        context,
+                        'Độ phù hợp',
+                        '${topic.matchScore}% phù hợp với bạn dựa trên AI\n\nĐánh giá khả thi: ${topic.feasibilityAssessment}',
                       ),
+                      child: CustomProgressCard(
+                        progressValue: (topic.matchScore / 100.0).clamp(
+                          0.0,
+                          1.0,
+                        ),
+                        size: 56,
+                        strokeWidth: 7,
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primary,
+                        ),
+                        gradientColors: [AppTheme.primary, AppTheme.secondary],
+                      ),
+                    ),
                   ),
                 ],
               ),

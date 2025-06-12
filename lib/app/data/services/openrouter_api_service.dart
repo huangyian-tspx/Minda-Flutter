@@ -102,7 +102,8 @@ class OpenRouterAPIService {
         "messages": [
           {"role": "user", "content": prompt},
         ],
-        "max_tokens": 1800, // Reduced from 2200 to 1800 for quota compliance
+        "max_tokens":
+            3500, // UPGRADED: Increased from 1800 to 3500 for paid API
         "temperature": 0.7,
         "top_p": 1,
         "frequency_penalty": 0,
@@ -167,32 +168,32 @@ class OpenRouterAPIService {
       }
     } on DioException catch (e) {
       AppLogger.e("DioException in OpenRouter API: ${e.message}");
-      
+
       // Handle specific error cases
       if (e.response?.statusCode == 402) {
         final errorData = e.response?.data;
-        String userMessage = "⚡ Hệ thống đã tối ưu xuống 1800 tokens để tiết kiệm credits.";
-        
+        String userMessage =
+            "💳 Tài khoản đã được nâng cấp nhưng vẫn gặp lỗi thanh toán. Hệ thống sẽ fallback với 1800 tokens.";
+
         if (errorData is Map<String, dynamic>) {
           final errorInfo = errorData['error'];
           if (errorInfo is Map<String, dynamic>) {
             final message = errorInfo['message']?.toString();
             if (message != null && message.contains('credits')) {
-              userMessage = "💰 Credits không đủ. Đã tối ưu tối đa để tiết kiệm. Vui lòng nâng cấp tài khoản để trải nghiệm đầy đủ.";
+              userMessage =
+                  "💰 Credits đã hết. Vui lòng nạp thêm credits để sử dụng full 3500 tokens.";
             } else if (message != null && message.contains('max_tokens')) {
-              userMessage = "📝 Request quá lớn. Hệ thống đã giảm xuống 1800 tokens.";
+              userMessage =
+                  "📝 Request 3500 tokens quá lớn. Hệ thống sẽ retry với tokens thấp hơn.";
             }
           }
         }
-        
-        return Failure(ApiError.server(
-          message: userMessage,
-          statusCode: 402,
-          technicalDetails: "OpenRouter 402 error after token optimization: ${e.response?.data}",
-          requestId: e.response?.headers.value('cf-ray'),
-        ));
+
+        // Automatic fallback với token thấp hơn
+        AppLogger.d("Attempting fallback with reduced tokens...");
+        return await _fallbackWithReducedTokens();
       }
-      
+
       return Failure(ApiError.fromDioException(e));
     } catch (e) {
       AppLogger.e("Unexpected error in OpenRouter API: $e");
@@ -219,7 +220,100 @@ class OpenRouterAPIService {
     return missingFields;
   }
 
-  /// Extract JSON từ AI response (remove markdown, extra text)
+  /// Fallback method với reduced tokens khi gặp lỗi 402
+  Future<ApiResponse<TopicSuggestionModel>> _fallbackWithReducedTokens() async {
+    try {
+      AppLogger.d("Executing fallback with reduced tokens (1500)");
+
+      // Lấy user data từ service
+      final userDataService = getx.Get.isRegistered<UserDataCollectionService>()
+          ? getx.Get.find<UserDataCollectionService>()
+          : null;
+
+      if (userDataService == null) {
+        AppLogger.e("UserDataCollectionService not found in fallback");
+        return Failure(
+          ApiError.server(
+            message: "Dịch vụ thu thập dữ liệu người dùng không khả dụng",
+            statusCode: 500,
+            technicalDetails:
+                "UserDataCollectionService not registered in GetX",
+          ),
+        );
+      }
+
+      final userData = userDataService.getCurrentData();
+
+      // Generate fallback prompt (more compact)
+      final prompt = AIPromptService.instance.generateProjectSuggestionPrompt(
+        userData,
+      );
+
+      // Prepare request body với reduced tokens
+      final requestBody = {
+        "model": AppConfigs.openRouterModel,
+        "messages": [
+          {"role": "user", "content": prompt},
+        ],
+        "max_tokens": 1500, // Fallback token limit
+        "temperature": 0.7,
+        "top_p": 1,
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+      };
+
+      AppLogger.d("Sending fallback request with 1500 tokens...");
+
+      // Make fallback API call
+      final response = await _dio.post('/chat/completions', data: requestBody);
+
+      if (response.statusCode == 200) {
+        final openRouterResponse = OpenRouterResponse.fromJson(response.data);
+        final aiContent = openRouterResponse.content.trim();
+
+        AppLogger.d("Fallback AI response content length: ${aiContent.length}");
+
+        final aiJsonData = _extractJsonFromAIResponse(aiContent);
+        if (aiJsonData == null) {
+          return Failure(
+            ApiError.parsing(
+              message: "AI response trong fallback không đúng định dạng JSON",
+              technicalDetails: "Failed to extract JSON from fallback response",
+            ),
+          );
+        }
+
+        final aiProjectResponse = AIProjectResponse.fromJson(aiJsonData);
+        final topicSuggestionModel = aiProjectResponse.toTopicSuggestionModel();
+
+        AppLogger.d(
+          "Fallback successful: Generated ${topicSuggestionModel.topics.length} projects",
+        );
+
+        return Success(topicSuggestionModel);
+      } else {
+        AppLogger.e("Fallback request failed: ${response.statusCode}");
+        return Failure(
+          ApiError.server(
+            message: "Cả request chính và fallback đều thất bại",
+            statusCode: response.statusCode ?? 500,
+            technicalDetails: "Fallback response: ${response.data}",
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.e("Error in fallback method: $e");
+      return Failure(
+        ApiError.server(
+          message: "Fallback request cũng gặp lỗi. Vui lòng thử lại sau.",
+          statusCode: 500,
+          technicalDetails: e.toString(),
+        ),
+      );
+    }
+  }
+
+  /// Extract JSON from AI response with better error handling
   Map<String, dynamic>? _extractJsonFromAIResponse(String aiResponse) {
     try {
       // Remove markdown code blocks if present
@@ -235,30 +329,67 @@ class OpenRouterAPIService {
 
       if (startIndex == -1 || lastIndex == -1 || startIndex >= lastIndex) {
         AppLogger.e("Cannot find valid JSON structure in AI response");
+        AppLogger.e(
+          "Response preview: ${aiResponse.substring(0, aiResponse.length > 300 ? 300 : aiResponse.length)}",
+        );
         return null;
       }
 
       final jsonString = cleanedResponse.substring(startIndex, lastIndex + 1);
-      AppLogger.d(
-        "Extracted JSON string: ${jsonString.length > 500 ? jsonString.substring(0, 500) + '...' : jsonString}",
-      );
 
-      return json.decode(jsonString) as Map<String, dynamic>;
+      // Try to parse JSON
+      try {
+        return json.decode(jsonString) as Map<String, dynamic>;
+      } catch (e) {
+        // If parsing fails, try to fix common JSON issues
+        AppLogger.e("Initial JSON parsing failed: $e");
+        AppLogger.e("Attempting to fix JSON...");
+
+        // Try to fix missing closing braces
+        String fixedJson = jsonString;
+        int openBraces = '{'.allMatches(jsonString).length;
+        int closeBraces = '}'.allMatches(jsonString).length;
+
+        if (openBraces > closeBraces) {
+          fixedJson = jsonString + '}' * (openBraces - closeBraces);
+          AppLogger.d(
+            "Added ${openBraces - closeBraces} missing closing braces",
+          );
+        }
+
+        // Try to fix missing quotes around keys
+        fixedJson = fixedJson.replaceAllMapped(
+          RegExp(r'([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:'),
+          (match) => '${match.group(1)}"${match.group(2)}":',
+        );
+
+        try {
+          return json.decode(fixedJson) as Map<String, dynamic>;
+        } catch (e2) {
+          AppLogger.e("Failed to fix JSON: $e2");
+          AppLogger.e("Original JSON string: $jsonString");
+          AppLogger.e("Fixed JSON string: $fixedJson");
+          return null;
+        }
+      }
     } catch (e) {
       AppLogger.e("Error parsing JSON from AI response: $e");
+      AppLogger.e(
+        "Response preview: ${aiResponse.substring(0, aiResponse.length > 300 ? 300 : aiResponse.length)}",
+      );
       return null;
     }
   }
 
   /// Get detailed project information by ID
-  /// 
+  ///
   /// Gọi OpenRouter API để lấy thông tin chi tiết hơn về 1 dự án cụ thể
   /// dựa trên ID và user context để có thông tin personalized
-  /// 
+  ///
   /// [projectId] ID của dự án cần lấy chi tiết
   /// [basicTopic] Thông tin cơ bản của topic để context
   Future<ApiResponse<ProjectTopic>> getProjectDetail(
-    String projectId, 
+    String projectId,
     Topic basicTopic,
   ) async {
     try {
@@ -275,7 +406,8 @@ class OpenRouterAPIService {
           ApiError.server(
             message: "Dịch vụ thu thập dữ liệu người dùng không khả dụng",
             statusCode: 500,
-            technicalDetails: "UserDataCollectionService not registered in GetX",
+            technicalDetails:
+                "UserDataCollectionService not registered in GetX",
           ),
         );
       }
@@ -296,7 +428,8 @@ class OpenRouterAPIService {
         "messages": [
           {"role": "user", "content": prompt},
         ],
-        "max_tokens": 1200, // Reduced from 1500 to 1200 for quota compliance
+        "max_tokens":
+            2500, // UPGRADED: Increased from 1200 to 2500 for paid API
         "temperature": 0.7,
         "top_p": 1,
         "frequency_penalty": 0,
@@ -308,7 +441,9 @@ class OpenRouterAPIService {
       // Make API call
       final response = await _dio.post('/chat/completions', data: requestBody);
 
-      AppLogger.d("OpenRouter project detail response status: ${response.statusCode}");
+      AppLogger.d(
+        "OpenRouter project detail response status: ${response.statusCode}",
+      );
 
       if (response.statusCode == 200) {
         final responseData = response.data;
@@ -352,33 +487,41 @@ class OpenRouterAPIService {
         );
       }
     } on DioException catch (e) {
-      AppLogger.e("DioException in OpenRouter project detail API: ${e.message}");
-      
+      AppLogger.e(
+        "DioException in OpenRouter project detail API: ${e.message}",
+      );
+
       // Handle specific error cases
       if (e.response?.statusCode == 402) {
         final errorData = e.response?.data;
-        String userMessage = "⚡ Hệ thống đã tối ưu xuống 1200 tokens để tiết kiệm credits.";
-        
+        String userMessage =
+            "⚡ Hệ thống đã tối ưu xuống 1200 tokens để tiết kiệm credits.";
+
         if (errorData is Map<String, dynamic>) {
           final errorInfo = errorData['error'];
           if (errorInfo is Map<String, dynamic>) {
             final message = errorInfo['message']?.toString();
             if (message != null && message.contains('credits')) {
-              userMessage = "💰 Credits không đủ. Đã tối ưu tối đa để tiết kiệm. Vui lòng nâng cấp tài khoản để trải nghiệm đầy đủ.";
+              userMessage =
+                  "💰 Credits không đủ. Đã tối ưu tối đa để tiết kiệm. Vui lòng nâng cấp tài khoản để trải nghiệm đầy đủ.";
             } else if (message != null && message.contains('max_tokens')) {
-              userMessage = "📝 Request quá lớn. Hệ thống đã giảm xuống 1200 tokens.";
+              userMessage =
+                  "📝 Request quá lớn. Hệ thống đã giảm xuống 1200 tokens.";
             }
           }
         }
-        
-        return Failure(ApiError.server(
-          message: userMessage,
-          statusCode: 402,
-          technicalDetails: "OpenRouter 402 error after token optimization: ${e.response?.data}",
-          requestId: e.response?.headers.value('cf-ray'),
-        ));
+
+        return Failure(
+          ApiError.server(
+            message: userMessage,
+            statusCode: 402,
+            technicalDetails:
+                "OpenRouter 402 error after token optimization: ${e.response?.data}",
+            requestId: e.response?.headers.value('cf-ray'),
+          ),
+        );
       }
-      
+
       return Failure(ApiError.fromDioException(e));
     } catch (e) {
       AppLogger.e("Unexpected error in OpenRouter project detail API: $e");
@@ -393,65 +536,135 @@ class OpenRouterAPIService {
   }
 
   /// Generate comprehensive project documentation cho Notion
-  /// 
+  ///generateProjectDocumentation
   /// Call OpenRouter API để tạo nội dung tài liệu BA-style cho dự án
-  /// 
+  ///
   /// [project] Thông tin dự án dạng Map
   Future<ApiResponse<Map<String, dynamic>>> generateProjectDocumentation(
     Map<String, dynamic> project,
   ) async {
     try {
-      AppLogger.d("Generating project documentation for: ${project['name']}");
+      AppLogger.d(
+        "Generating PROFESSIONAL project documentation for: ${project['name']}",
+      );
 
-      // Generate prompt
-      final prompt = AIPromptService.instance.generateProjectDocumentationPrompt(project);
-      AppLogger.d("Generated documentation prompt length: ${prompt.length}");
+      // 1. Advanced Prompt Engineering
+      // We are crafting a highly detailed prompt to get the best possible output.
+      // This is the core of the improvement.
+      final String detailedPrompt =
+          """
+      As a Senior Solutions Architect and Product Manager, create a comprehensive and professional project documentation in JSON format.
+      The project details provided by the user are:
+      - Name: ${project['name']}
+      - Description: ${project['description']}
+      - Core Features: ${project['features']?.join(', ')}
+      - Tech Stack: ${project['techStack']?.join(', ')}
 
-      // Prepare request body
-      final requestBody = {
-        "model": AppConfigs.openRouterModel,
-        "messages": [
-          {"role": "user", "content": prompt},
+      The output JSON MUST strictly follow this detailed schema:
+      {
+        "title": "Tên dự án",
+        "projectOverview": {
+          "problemStatement": "Phân tích chi tiết vấn đề mà dự án này giải quyết.",
+          "targetAudience": "Mô tả chi tiết đối tượng người dùng mục tiêu (demographics, needs, pain points).",
+          "solution": "Trình bày giải pháp đề xuất một cách toàn diện, nó giải quyết vấn đề như thế nào."
+        },
+        "userPersonas": [
+          { "name": "Tên persona (ví dụ: Sinh viên IT năm cuối)", "demographics": "Thông tin nhân khẩu học", "goals": ["Mục tiêu chính khi dùng app"], "frustrations": ["Những khó khăn, rào cản họ gặp phải"] }
         ],
-        "max_tokens": 1000, // Reduced from 1500 to 1000 for quota compliance
-        "temperature": 0.7,
+        "functionalRequirements": [
+          { "id": "FEAT-01", "name": "Tên tính năng", "userStory": "As a [user type], I want to [action] so that [benefit].", "acceptanceCriteria": ["Điều kiện chấp nhận 1", "Điều kiện chấp nhận 2"] }
+        ],
+        "nonFunctionalRequirements": [
+          { "category": "Performance", "requirement": "API response time for core actions should be under 200ms." },
+          { "category": "Security", "requirement": "All user data must be encrypted at rest and in transit. Use JWT for authentication." },
+          { "category": "Scalability", "requirement": "The system must be designed to handle 10,000 concurrent users." }
+        ],
+        "systemArchitecture": {
+          "overview": "Mô tả kiến trúc hệ thống được đề xuất (ví dụ: Microservices, Layered Architecture) và lý do lựa chọn.",
+          "diagramDescription": "Mô tả bằng lời về sơ đồ kiến trúc, bao gồm các thành phần chính (Mobile App, Backend, Database, 3rd-party services) và luồng dữ liệu chính.",
+          "components": [
+            { "name": "Mobile App (Flutter)", "description": "Vai trò, trách nhiệm và các thư viện chính." },
+            { "name": "Backend API (e.g., Node.js/Express)", "description": "Vai trò, trách nhiệm và logic xử lý chính." },
+            { "name": "Database (e.g., PostgreSQL/Firestore)", "description": "Lựa chọn cơ sở dữ liệu và lý do." }
+          ]
+        },
+        "databaseSchema": [
+          { 
+            "tableName": "users", 
+            "columns": [ 
+              { "name": "id", "type": "UUID", "isPrimary": true, "description": "Primary key for user" }, 
+              { "name": "email", "type": "VARCHAR(255)", "isUnique": true, "description": "User's email, used for login" },
+              { "name": "password_hash", "type": "VARCHAR(255)", "description": "Hashed user password" }
+            ],
+            "relations": "One-to-many with 'projects' table."
+          }
+        ],
+        "apiEndpoints": [
+          { 
+            "method": "POST", 
+            "path": "/api/v1/auth/register", 
+            "description": "Endpoint to register a new user.", 
+            "requestBody": { "example": { "email": "user@example.com", "password": "password123" } }, 
+            "responseSuccess": { "statusCode": 201, "example": { "userId": "uuid-goes-here", "token": "jwt-token-goes-here" } } 
+          }
+        ],
+        "projectRoadmap": [
+          { "phase": "Phase 1 - MVP (1-2 months)", "goals": ["Validate core idea", "Gather initial user feedback"], "keyFeatures": ["User registration", "Core feature A", "Core feature B"] },
+          { "phase": "Phase 2 - Public Beta (3-4 months)", "goals": ["Grow user base", "Improve performance"], "keyFeatures": ["New feature C", "Integration with X", "Admin dashboard"] }
+        ]
+      }
+      """;
+
+      // 2. Prepare Request Body with a powerful model
+      final requestBody = {
+        "model": "anthropic/claude-3.5-sonnet-20240620",
+        "messages": [
+          {"role": "user", "content": detailedPrompt},
+        ],
+        "max_tokens": 4096,
+        "temperature":
+            0.5, // Lower temperature for more factual, professional output
         "top_p": 1,
+        "response_format": {"type": "json_object"},
         "frequency_penalty": 0,
         "presence_penalty": 0,
       };
 
-      AppLogger.d("Sending documentation request to OpenRouter...");
+      AppLogger.d("Sending ADVANCED documentation request to OpenRouter...");
 
-      // Make API call
+      // 3. Make API Call
       final response = await _dio.post('/chat/completions', data: requestBody);
 
-      AppLogger.d("OpenRouter documentation response status: ${response.statusCode}");
+      AppLogger.d(
+        "OpenRouter documentation response status: ${response.statusCode}",
+      );
 
+      // 4. Handle Successful Response
       if (response.statusCode == 200) {
         final responseData = response.data;
-        final aiContent = responseData['choices'][0]['message']['content'];
+        final String aiContent =
+            responseData['choices'][0]['message']['content'];
 
         AppLogger.d("AI documentation content length: ${aiContent.length}");
-        AppLogger.d(
-          "AI documentation preview: ${aiContent.length > 200 ? aiContent.substring(0, 200) + '...' : aiContent}",
-        );
 
-        // Parse JSON from AI response
-        final documentData = _extractJsonFromAIResponse(aiContent);
-        if (documentData == null) {
-          AppLogger.e("Failed to extract JSON from AI documentation response");
+        // 5. Parse JSON directly, with robust error handling
+        try {
+          final documentData = json.decode(aiContent) as Map<String, dynamic>;
+          AppLogger.d("Successfully parsed AI documentation JSON");
+          return Success(documentData);
+        } on FormatException catch (e) {
+          AppLogger.e("AI returned invalid JSON despite JSON_MODE: $e");
+          AppLogger.e("Raw content from AI: $aiContent");
           return Failure(
             ApiError.parsing(
-              message: "AI response không đúng định dạng JSON",
-              technicalDetails: "Failed to extract valid JSON from AI documentation response",
+              message: "AI đã trả về dữ liệu không đúng định dạng JSON.",
+              technicalDetails:
+                  "FormatException: ${e.message}\nRaw Content: $aiContent",
             ),
           );
         }
-
-        AppLogger.d("Successfully parsed AI documentation");
-        
-        return Success(documentData);
       } else {
+        // Handle server-side errors
         AppLogger.e(
           "OpenRouter documentation API error: ${response.statusCode} - ${response.data}",
         );
@@ -464,39 +677,25 @@ class OpenRouterAPIService {
         );
       }
     } on DioException catch (e) {
+      // 6. Handle Network and Specific HTTP Errors
       AppLogger.e("DioException in OpenRouter documentation API: ${e.message}");
-      
-      // Handle specific error cases
       if (e.response?.statusCode == 402) {
-        final errorData = e.response?.data;
-        String userMessage = "📄 Đã tối ưa documentation xuống 1000 tokens để tiết kiệm credits.";
-        
-        if (errorData is Map<String, dynamic>) {
-          final errorInfo = errorData['error'];
-          if (errorInfo is Map<String, dynamic>) {
-            final message = errorInfo['message']?.toString();
-            if (message != null && message.contains('credits')) {
-              userMessage = "💰 Credits không đủ cho documentation. Đã tối ưu tối đa. Vui lòng nâng cấp tài khoản.";
-            } else if (message != null && message.contains('max_tokens')) {
-              userMessage = "📝 Document quá lớn. Hệ thống đã giảm xuống 1000 tokens.";
-            }
-          }
-        }
-        
-        return Failure(ApiError.server(
-          message: userMessage,
-          statusCode: 402,
-          technicalDetails: "OpenRouter 402 error for documentation: ${e.response?.data}",
-          requestId: e.response?.headers.value('cf-ray'),
-        ));
+        return Failure(
+          ApiError.server(
+            message:
+                "💰 Credits không đủ. Vui lòng nâng cấp tài khoản để sử dụng tính năng này.",
+            statusCode: 402,
+            technicalDetails: "OpenRouter 402 error: ${e.response?.data}",
+          ),
+        );
       }
-      
       return Failure(ApiError.fromDioException(e));
     } catch (e) {
+      // 7. Handle Any Other Unexpected Errors
       AppLogger.e("Unexpected error in OpenRouter documentation API: $e");
       return Failure(
         ApiError.server(
-          message: "Lỗi không xác định trong quá trình tạo documentation",
+          message: "Lỗi không xác định trong quá trình tạo tài liệu",
           statusCode: 500,
           technicalDetails: e.toString(),
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'base_controller.dart';
 
 class BaseView<T extends BaseController> extends StatelessWidget {
@@ -14,7 +15,7 @@ class BaseView<T extends BaseController> extends StatelessWidget {
       children: [
         child,
         Obx(() {
-          if (controller.isLoading) {
+          if (controller.isLoadingBase) {
             return Container(
               color: Colors.black.withOpacity(0.5),
               child: const Center(
@@ -28,4 +29,4 @@ class BaseView<T extends BaseController> extends StatelessWidget {
       ],
     );
   }
-} 
+}

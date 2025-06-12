@@ -47,15 +47,15 @@ class OnboardingView extends GetView<OnboardingController> {
                       ),
                       // Skip button
                       TextButton(
-                        onPressed: controller.skipOnboarding,
-                        child: Text(
-                          'Skip',
-                          style: TextStyle(
-                            color: AppTheme.secondary,
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                    onPressed: controller.skipOnboarding,
+                    child: Text(
+                      'Skip',
+                      style: TextStyle(
+                        color: AppTheme.secondary,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                       ),
                     ],
                   ),

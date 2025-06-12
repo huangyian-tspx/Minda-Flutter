@@ -1,21 +1,35 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'app/core/controllers/global_app_controller.dart';
 import 'app/core/lang/app_translations.dart';
 import 'app/core/widgets/custom_chip.dart';
 import 'app/core/widgets/error_state_widget.dart';
 import 'app/core/widgets/section_card.dart';
+import 'app/data/services/database_service.dart';
 import 'app/di.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
 
 Future<void> main() async {
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
   WidgetsFlutterBinding.ensureInitialized();
   await initDI();
+
+  // Wait for DatabaseService to be ready and get the instance
+  await sl.isReady<DatabaseService>();
+  final dbService = sl<DatabaseService>();
+  Get.put(dbService, permanent: true);
+
   Get.put(GlobalAppController(), permanent: true);
   if (kDebugMode) {
     debugProfileBuildsEnabled = false;

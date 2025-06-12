@@ -17,6 +17,10 @@ import '../modules/onboarding/onboarding_binding.dart';
 import '../modules/onboarding/onboarding_view.dart';
 import '../modules/splash/splash_binding.dart';
 import '../modules/splash/splash_view.dart';
+import '../modules/favorites/favorites_controller.dart';
+import '../modules/favorites/favorites_view.dart';
+import '../modules/project_history/project_history_controller.dart';
+import '../modules/project_history/project_history_view.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -55,6 +59,20 @@ class AppPages {
       name: Routes.PROJECT_DETAIL,
       page: () => const ProjectDetailView(),
       binding: ProjectDetailBinding(),
+    ),
+    GetPage(
+      name: Routes.FAVORITES,
+      page: () => const FavoritesView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => FavoritesController());
+      }),
+    ),
+    GetPage(
+      name: Routes.PROJECT_HISTORY,
+      page: () => const ProjectHistoryView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => ProjectHistoryController());
+      }),
     ),
     GetPage(
       name: Routes.DEMO,

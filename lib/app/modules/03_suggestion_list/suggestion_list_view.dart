@@ -5,8 +5,8 @@ import 'package:mind_ai_app/app/core/values/app_constants.dart';
 import '../../core/base/base_view.dart';
 import '../../core/values/app_enums.dart';
 import '../../core/widgets/custom_app_bar.dart';
+import '../../core/widgets/global_floating_menu.dart';
 import '../../core/widgets/suggestion_project_card.dart';
-import '../../core/widgets/scroll_to_top_fab.dart';
 import '../../data/models/topic_suggestion_model.dart';
 import 'suggestion_list_controller.dart';
 import 'widgets/animated_filter_tab_bar.dart';
@@ -22,15 +22,29 @@ class SuggestionListView extends GetView<SuggestionListController> {
       description:
           'Ứng dụng giúp kết nối học viên và gia sư, tích hợp chat, thanh toán, và quản lý lịch học.',
       technologies: [
-        Technology(name: 'Flutter', description: 'Framework UI đa nền tảng dễ học, phù hợp cho người mới bắt đầu'),
-        Technology(name: 'Firebase', description: 'Nền tảng backend-as-a-service của Google, dễ tích hợp'),
-        Technology(name: 'API', description: 'Giao tiếp dữ liệu giữa client và server'),
-        Technology(name: 'Maps API', description: 'Tích hợp bản đồ và định vị GPS'),
+        Technology(
+          name: 'Flutter',
+          description:
+              'Framework UI đa nền tảng dễ học, phù hợp cho người mới bắt đầu',
+        ),
+        Technology(
+          name: 'Firebase',
+          description: 'Nền tảng backend-as-a-service của Google, dễ tích hợp',
+        ),
+        Technology(
+          name: 'API',
+          description: 'Giao tiếp dữ liệu giữa client và server',
+        ),
+        Technology(
+          name: 'Maps API',
+          description: 'Tích hợp bản đồ và định vị GPS',
+        ),
       ],
       difficulty: 'An toàn, phù hợp qua môn',
       matchScore: 85,
       duration: 3,
-      feasibilityAssessment: 'Khả thi cao, tài liệu phong phú, cộng đồng hỗ trợ tốt',
+      feasibilityAssessment:
+          'Khả thi cao, tài liệu phong phú, cộng đồng hỗ trợ tốt',
     );
     return BaseView(
       controller: controller,
@@ -40,10 +54,8 @@ class SuggestionListView extends GetView<SuggestionListController> {
           title: AppConstants.stepTitles[2],
           isWantShowBackButton: true,
           popupActions: const [
-            PopupMenuAction.restartFromBeginning,
             PopupMenuAction.settings,
             PopupMenuAction.changeTheme,
-            PopupMenuAction.favoriteProjects,
           ],
           onPopupActionSelected: controller.handleAppBarAction,
         ),
@@ -77,8 +89,11 @@ class SuggestionListView extends GetView<SuggestionListController> {
                     //   );
                     // }
                     return ListView.builder(
-                      controller: controller.scrollController, // GẮN SCROLL CONTROLLER
-                      itemCount: controller.filteredSuggestionList.isEmpty ? 3 : controller.filteredSuggestionList.length,
+                      controller:
+                          controller.scrollController, // GẮN SCROLL CONTROLLER
+                      itemCount: controller.filteredSuggestionList.isEmpty
+                          ? 3
+                          : controller.filteredSuggestionList.length,
                       // shrinkWrap: true,
                       // physics: const NeverScrollableScrollPhysics(),
                       padding: EdgeInsets.only(top: 10),
@@ -88,18 +103,14 @@ class SuggestionListView extends GetView<SuggestionListController> {
                           // Show demo topic if no real data
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 20),
-                            child: SuggestionProjectCard(
-                              topic: demoTopic,
-                            ),
+                            child: SuggestionProjectCard(topic: demoTopic),
                           );
                         }
-                        
+
                         final topic = listToShow[index % listToShow.length];
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: SuggestionProjectCard(
-                            topic: topic,
-                          ),
+                          child: SuggestionProjectCard(topic: topic),
                         );
                       },
                     );
@@ -129,7 +140,7 @@ class SuggestionListView extends GetView<SuggestionListController> {
           ),
         ),
         // THÊM FLOATING ACTION BUTTON
-        floatingActionButton: const ScrollToTopFab<SuggestionListController>(),
+        floatingActionButton: const GlobalFloatingMenu(),
       ),
     );
   }

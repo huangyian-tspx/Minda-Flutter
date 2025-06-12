@@ -20,9 +20,7 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
       backgroundColor: AppTheme.background,
       appBar: _buildAppBar(),
       body: Obx(() => _buildBody()),
-      floatingActionButton: Obx(
-        () => _buildFloatingActionButton() ?? Container(),
-      ),
+      floatingActionButton: const GlobalFloatingMenu(),
     );
   }
 
@@ -31,6 +29,7 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
     return AppBar(
       backgroundColor: AppTheme.background,
       elevation: 0,
+      centerTitle: false,
       leading: IconButton(
         icon: Icon(Icons.arrow_back_ios, color: AppTheme.primary),
         onPressed: controller.goBack,
@@ -47,7 +46,7 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
       actions: [
         // Loading indicator trong app bar
         Obx(
-          () => controller.isLoading
+          () => controller.isLoadingBase
               ? Container(
                   padding: EdgeInsets.all(16),
                   child: SizedBox(
@@ -64,16 +63,26 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.share, color: AppTheme.primary),
-                      onPressed: controller.shareProject,
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.favorite_border,
-                        color: AppTheme.primary,
+                    // IconButton(
+                    //   icon: Icon(Icons.share, color: AppTheme.primary),
+                    //   onPressed: controller.shareProject,
+                    // ),
+                    // Favorite button với trạng thái realtime
+                    Obx(
+                      () => IconButton(
+                        icon: Icon(
+                          controller.isFavorite.value
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: controller.isFavorite.value
+                              ? Colors.red
+                              : AppTheme.primary,
+                        ),
+                        onPressed: controller.toggleFavorite,
+                        tooltip: controller.isFavorite.value
+                            ? 'Xóa khỏi yêu thích'
+                            : 'Thêm vào yêu thích',
                       ),
-                      onPressed: controller.toggleFavorite,
                     ),
                   ],
                 ),
@@ -85,7 +94,7 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
   /// Main body với loading, error, và content states
   Widget _buildBody() {
     // Loading state
-    if (controller.isLoading && !controller.hasProjectData) {
+    if (controller.isLoadingBase && !controller.hasProjectData) {
       return _buildLoadingState();
     }
 
@@ -110,14 +119,15 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Lottie.asset(
-            'assets/lot/loading.json',
+            'assets/lot/lot_thinking.json',
             width: 120.w,
             height: 120.h,
             fit: BoxFit.cover,
           ),
           SizedBox(height: AppSizes.p16),
           TypewriterText(
-            text: 'Đang tải thông tin chi tiết dự án...',
+            text:
+                'Đang tải thông tin chi tiết dự án. Vui lòng không chuyển màn hình hoặc đóng ứng dụng ...',
             speed: Duration(milliseconds: 80),
             style: TextStyle(
               fontSize: AppSizes.f16,
@@ -513,7 +523,7 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
           text: '',
           slideDelay: Duration(milliseconds: 500),
           child: SectionCard(
-            title: 'Kiến thức nâng cao - Đạt điểm cao',
+            title: 'Tính năng nâng cao - Đạt điểm cao',
             child: Container(
               width: double.infinity,
               constraints: BoxConstraints(minHeight: 100.h),
@@ -554,14 +564,6 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
               constraints: BoxConstraints(minHeight: 250.h),
               child: Stack(
                 children: [
-                  Positioned.fill(
-                    child: Lottie.asset(
-                      'assets/lot/know.json',
-                      fit: BoxFit.cover,
-                      repeat: true,
-                      animate: true,
-                    ),
-                  ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -782,31 +784,31 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
           child: Column(
             children: [
               // Tạo Checklist
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: Implement create checklist
-                    Get.snackbar(
-                      'Tạo Checklist',
-                      'Tính năng sẽ được bổ sung sau',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
-                  },
-                  icon: Icon(Icons.rocket_launch),
-                  label: Text('🚀 TẠO CHECKLIST & BẮT ĐẦU DỰ ÁN'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFFFB6C1), // Light pink
-                    foregroundColor: Colors.black87,
-                    padding: EdgeInsets.symmetric(vertical: AppSizes.p16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSizes.r12),
-                    ),
-                    elevation: 2,
-                  ),
-                ),
-              ),
-              SizedBox(height: AppSizes.p12),
+              // SizedBox(
+              //   width: double.infinity,
+              //   child: ElevatedButton.icon(
+              //     onPressed: () {
+              //       // TODO: Implement create checklist
+              //       Get.snackbar(
+              //         'Tạo Checklist',
+              //         'Tính năng sẽ được bổ sung sau',
+              //         snackPosition: SnackPosition.BOTTOM,
+              //       );
+              //     },
+              //     icon: Icon(Icons.rocket_launch),
+              //     label: Text('🚀 TẠO CHECKLIST & BẮT ĐẦU DỰ ÁN'),
+              //     style: ElevatedButton.styleFrom(
+              //       backgroundColor: Color(0xFFFFB6C1), // Light pink
+              //       foregroundColor: Colors.black87,
+              //       padding: EdgeInsets.symmetric(vertical: AppSizes.p16),
+              //       shape: RoundedRectangleBorder(
+              //         borderRadius: BorderRadius.circular(AppSizes.r12),
+              //       ),
+              //       elevation: 2,
+              //     ),
+              //   ),
+              // ),
+              // SizedBox(height: AppSizes.p12),
 
               // Chia sẻ cho Team
               SizedBox(
@@ -859,17 +861,5 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
         ),
       ],
     );
-  }
-
-  /// Floating Action Button
-  Widget? _buildFloatingActionButton() {
-    return controller.hasProjectData
-        ? FloatingActionButton(
-            onPressed: controller.resetAnimations,
-            backgroundColor: AppTheme.primary,
-            child: Icon(Icons.refresh, color: Colors.white),
-            tooltip: 'Reset Animations',
-          )
-        : null;
   }
 }

@@ -1,16 +1,24 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:get/get.dart';
 
 import '../../core/config/app_configs.dart';
 import '../../core/utils/app_logger.dart';
 import '../models/api_error.dart';
 import '../models/api_response.dart';
 
-/// Service xử lý tất cả API calls đến Notion
+/// Service xử lý tất cả API calls đến Notion, đã được cải tiến để tạo ra
+/// các trang tài liệu có định dạng chuyên nghiệp, đẹp mắt và chi tiết hơn.
 ///
-/// Handles page creation, formatting, và error handling
-class NotionAPIService {
+/// Các cải tiến chính:
+/// - **Cấu trúc module hóa:** Logic tạo block được chia thành các hàm nhỏ hơn.
+/// - **Sử dụng Block nâng cao:** Tận dụng Callouts, Columns, Toggles và Code Blocks.
+/// - **Mục lục động:** Sử dụng block `table_of_contents` của Notion.
+/// - **Định dạng bảng (Schema):** Trình bày schema database một cách rõ ràng.
+/// - **Định dạng API Endpoint:** Hiển thị chi tiết từng endpoint trong toggle.
+/// - **Cải thiện tính ổn định:** Xử lý tốt hơn các trường hợp thiếu dữ liệu.
+class NotionAPIService extends GetxService {
   static NotionAPIService? _instance;
   late Dio _dio;
 
@@ -37,7 +45,6 @@ class NotionAPIService {
       ),
     );
 
-    // Add logging interceptor
     _dio.interceptors.add(
       LogInterceptor(
         requestBody: true,
@@ -47,24 +54,24 @@ class NotionAPIService {
     );
   }
 
-  /// Create a new page trong Notion database với professional formatting
+  /// Tạo một trang Notion mới với định dạng chuyên nghiệp.
   ///
-  /// [title] Tiêu đề của document
-  /// [content] Nội dung đã được structure từ AI
-  /// Returns: Notion page URL hoặc error
+  /// [title] Tiêu đề của trang.
+  /// [content] Nội dung đã được structure từ AI.
+  /// Returns: URL của trang Notion hoặc lỗi.
   Future<ApiResponse<String>> createProjectDocument({
     required String title,
     required Map<String, dynamic> content,
   }) async {
     try {
-      AppLogger.d("Creating Notion document for: $title");
+      AppLogger.d("Creating advanced Notion document for: $title");
 
-      // Format content thành Notion blocks
+      // Cải tiến: Tạo blocks với cấu trúc module hóa và định dạng nâng cao.
       final blocks = _formatContentToNotionBlocks(content);
 
-      // Prepare request body cho Notion API
       final requestBody = {
-        "parent": {"type": "database_id", "database_id": AppConfigs.dbIDNotion},
+        "parent": {"database_id": AppConfigs.dbIDNotion},
+        "icon": {"type": "emoji", "emoji": "📑"}, // Thêm icon cho trang
         "properties": {
           "Name": {
             "title": [
@@ -77,22 +84,22 @@ class NotionAPIService {
         "children": blocks,
       };
 
-      AppLogger.d("Sending request to Notion API...");
-
-      // Make API call
-      final response = await _dio.post('/pages', data: requestBody);
+      AppLogger.d("Sending request to Notion API with advanced blocks...");
+      final response = await _dio.post(
+        '/pages',
+        data: json.encode(requestBody),
+      );
 
       AppLogger.d("Notion response status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
-        final pageId = response.data['id'] as String;
         final pageUrl = response.data['url'] as String;
-        
         AppLogger.d("Successfully created Notion page: $pageUrl");
-        
         return Success(pageUrl);
       } else {
-        AppLogger.e("Notion API error: ${response.statusCode} - ${response.data}");
+        AppLogger.e(
+          "Notion API error: ${response.statusCode} - ${response.data}",
+        );
         return Failure(
           ApiError.server(
             message: "Lỗi từ Notion API: ${response.statusMessage}",
@@ -104,393 +111,478 @@ class NotionAPIService {
     } on DioException catch (e) {
       AppLogger.e("DioException in Notion API: ${e.message}");
       AppLogger.e("Response data: ${e.response?.data}");
-      
-      // Handle specific Notion errors
-      if (e.response?.statusCode == 401) {
-        return Failure(
-          ApiError.parsing(
-            message: "Notion API key không hợp lệ. Vui lòng kiểm tra lại.",
-            technicalDetails: "Invalid Notion API key",
-          ),
-        );
-      }
-      
-      if (e.response?.statusCode == 404) {
-        return Failure(
-          ApiError.parsing(
-            message:
-                "Database Notion không tồn tại. Vui lòng kiểm tra Database ID.",
-            technicalDetails: "Database ID: ${AppConfigs.dbIDNotion}",
-          ),
-        );
-      }
 
-      if (e.response?.statusCode == 400) {
-        return Failure(
-          ApiError.parsing(
-            message: "Dữ liệu request không hợp lệ. Kiểm tra database schema.",
-            technicalDetails: "Notion 400 error: ${e.response?.data}",
-          ),
-        );
+      String message = "Lỗi khi kết nối đến Notion.";
+      String technicalDetails = "DioException: ${e.message}";
+
+      if (e.response != null) {
+        final responseData = e.response?.data;
+        final notionErrorCode = responseData?['code'];
+        final notionErrorMessage = responseData?['message'];
+
+        switch (e.response?.statusCode) {
+          case 401:
+            message = "API key của Notion không hợp lệ hoặc hết hạn.";
+            technicalDetails = "Invalid API key. Notion code: $notionErrorCode";
+            break;
+          case 404:
+            message =
+                "Database ID của Notion không tồn tại hoặc không có quyền truy cập.";
+            technicalDetails =
+                "Database ID not found: ${AppConfigs.dbIDNotion}. Notion code: $notionErrorCode";
+            break;
+          case 400:
+            message =
+                "Dữ liệu gửi lên không hợp lệ. Vui lòng kiểm tra cấu trúc database và dữ liệu đầu vào.";
+            technicalDetails =
+                "Bad request. Notion error: $notionErrorMessage. Data: $responseData";
+            break;
+          default:
+            message = "Lỗi từ server Notion: ${e.response?.statusMessage}";
+            technicalDetails =
+                "Status: ${e.response?.statusCode}. Data: $responseData";
+        }
       }
-      
-      return Failure(ApiError.fromDioException(e));
-    } catch (e) {
-      AppLogger.e("Unexpected error in Notion API: $e");
       return Failure(
-        ApiError.server(
-          message: "Lỗi không xác định khi tạo Notion document",
-          statusCode: 500,
-          technicalDetails: e.toString(),
-        ),
+        ApiError.fromDioException(
+          e,
+        ).copyWith(message: message, technicalDetails: technicalDetails),
       );
+    } catch (e, stackTrace) {
+      AppLogger.e("Unexpected error in Notion API");
+      return Failure(ApiError.server(message: "message", statusCode: 1));
     }
   }
 
-  /// Format content từ AI response thành Notion blocks (NO EMOJIS)
-  /// 
-  /// Converts structured data thành Notion block format
+  /// -- CẢI TIẾN LỚN: TÁCH LOGIC TẠO BLOCK THÀNH CÁC HÀM RIÊNG BIỆT --
+  /// Chuyển đổi nội dung từ AI thành danh sách các block của Notion.
   List<Map<String, dynamic>> _formatContentToNotionBlocks(
     Map<String, dynamic> content,
   ) {
-    final blocks = <Map<String, dynamic>>[];
+    final List<Map<String, dynamic>> blocks = [];
 
     try {
-      // Header
-      blocks.add(_createHeading1Block(content['title'] ?? 'Project Documentation'));
-
-      // Table of Contents
-      blocks.add(_createHeading2Block("Muc Luc"));
-      blocks.add(_createBulletedListBlock("1. Tong quan du an"));
-      blocks.add(_createBulletedListBlock("2. Phan tich yeu cau"));
-      blocks.add(_createBulletedListBlock("3. Kien truc he thong"));
-      blocks.add(_createBulletedListBlock("4. Cong nghe su dung"));
-      blocks.add(_createBulletedListBlock("5. Tinh nang chinh"));
-      blocks.add(_createBulletedListBlock("6. Database Design"));
-      blocks.add(_createBulletedListBlock("7. API Documentation"));
-      blocks.add(_createBulletedListBlock("8. Ke hoach trien khai"));
-      
+      // -- TIÊU ĐỀ CHÍNH & MỤC LỤC TỰ ĐỘNG --
+      blocks.add(
+        _createHeading1Block(content['title'] ?? 'Project Documentation'),
+      );
+      blocks.add(
+        _createCalloutBlock(
+          '✨',
+          'Đây là tài liệu dự án được tạo tự động bởi AI. Tất cả các mục chính đều có trong mục lục bên dưới.',
+        ),
+      );
+      blocks.add(_createHeading2Block("Mục Lục"));
+      blocks.add(
+        _createTableOfContentsBlock(),
+      ); // Mục lục tự động dựa trên các heading
       blocks.add(_createDividerBlock());
 
-      // 1. Project Overview
-      blocks.add(_createHeading2Block("1. Tong Quan Du An"));
-      blocks.add(_createParagraphBlock(content['overview'] ?? ''));
-      
-      // Key metrics
-      if (content['keyMetrics'] != null) {
-        blocks.add(_createParagraphBlock("Key Metrics: ${content['keyMetrics']}"));
-      }
-      
+      // -- CÁC PHẦN CỦA TÀI LIỆU --
+      // Mỗi phần được tạo bởi một hàm riêng để dễ quản lý.
+      blocks.addAll(_buildOverviewSection(content));
+      blocks.addAll(_buildRequirementsSection(content));
+      blocks.addAll(_buildArchitectureSection(content));
+      blocks.addAll(_buildTechStackSection(content));
+      blocks.addAll(_buildCoreFeaturesSection(content));
+      blocks.addAll(_buildDatabaseSection(content));
+      blocks.addAll(_buildApiSection(content));
+      blocks.addAll(_buildImplementationPlanSection(content));
+
+      // -- FOOTER --
       blocks.add(_createDividerBlock());
-
-      // 2. Requirements Analysis
-      blocks.add(_createHeading2Block("2. Phan Tich Yeu Cau"));
-      
-      // Functional Requirements
-      blocks.add(_createHeading3Block("2.1 Yeu Cau Chuc Nang"));
-      if (content['functionalRequirements'] is List) {
-        for (final req in content['functionalRequirements']) {
-          blocks.add(_createToggleBlock(
-            req['title'] ?? '',
-            req['description'] ?? '',
-          ));
-        }
-      }
-
-      // Non-functional Requirements
-      blocks.add(_createHeading3Block("2.2 Yeu Cau Phi Chuc Nang"));
-      if (content['nonFunctionalRequirements'] is List) {
-        for (final req in content['nonFunctionalRequirements']) {
-          blocks.add(_createNumberedListBlock(req.toString()));
-        }
-      }
-      
-      blocks.add(_createDividerBlock());
-
-      // 3. System Architecture
-      blocks.add(_createHeading2Block("3. Kien Truc He Thong"));
-      blocks.add(_createParagraphBlock(content['architecture'] ?? ''));
-      
-      blocks.add(_createDividerBlock());
-
-      // 4. Tech Stack
-      blocks.add(_createHeading2Block("4. Cong Nghe Su Dung"));
-      
-      // Frontend Technologies
-      blocks.add(_createHeading3Block("Frontend"));
-      if (content['frontendTech'] is List) {
-        for (final tech in content['frontendTech']) {
-          blocks.add(_createBulletedListBlock("${tech['name']}: ${tech['reason']}"));
-        }
-      }
-
-      // Backend Technologies
-      blocks.add(_createHeading3Block("Backend"));
-      if (content['backendTech'] is List) {
-        for (final tech in content['backendTech']) {
-          blocks.add(_createBulletedListBlock("${tech['name']}: ${tech['reason']}"));
-        }
-      }
-      
-      blocks.add(_createDividerBlock());
-
-      // 5. Core Features
-      blocks.add(_createHeading2Block("5. Tinh Nang Chinh"));
-      
-      if (content['coreFeatures'] is List) {
-        int index = 1;
-        for (final feature in content['coreFeatures']) {
-          blocks.add(_createHeading3Block("5.${index}. ${feature['name']}"));
-          blocks.add(_createParagraphBlock(feature['description'] ?? ''));
-          
-          // User story
-          if (feature['userStory'] != null) {
-            blocks.add(_createParagraphBlock("User Story: ${feature['userStory']}"));
-          }
-          
-          // Acceptance criteria
-          if (feature['acceptanceCriteria'] is List) {
-            blocks.add(_createParagraphBlock("Acceptance Criteria:"));
-            for (final criteria in feature['acceptanceCriteria']) {
-              blocks.add(_createCheckboxBlock(criteria, false));
-            }
-          }
-          
-          index++;
-        }
-      }
-      
-      blocks.add(_createDividerBlock());
-
-      // 6. Database Design
-      blocks.add(_createHeading2Block("6. Database Design"));
-      
-      if (content['database'] != null && content['database']['tables'] is List) {
-        for (final table in content['database']['tables']) {
-          blocks.add(_createHeading3Block(table['name'] ?? ''));
-          if (table['fields'] is List) {
-            for (final field in table['fields']) {
-              blocks.add(_createBulletedListBlock(
-                "${field['name']} (${field['type']}): ${field['description'] ?? ''}"
-              ));
-            }
-          }
-        }
-      }
-      
-      blocks.add(_createDividerBlock());
-
-      // 7. API Documentation
-      blocks.add(_createHeading2Block("7. API Documentation"));
-      
-      if (content['apiEndpoints'] is List) {
-        for (final endpoint in content['apiEndpoints']) {
-          blocks.add(_createToggleBlock(
-            "${endpoint['method']} ${endpoint['path']}",
-            _formatApiEndpoint(endpoint),
-          ));
-        }
-      }
-      
-      blocks.add(_createDividerBlock());
-
-      // 8. Implementation Plan
-      blocks.add(_createHeading2Block("8. Ke Hoach Trien Khai"));
-      
-      if (content['milestones'] is List) {
-        for (final milestone in content['milestones']) {
-          blocks.add(_createHeading3Block("${milestone['phase']}"));
-          blocks.add(_createParagraphBlock("Thoi gian: ${milestone['duration']}"));
-          blocks.add(_createParagraphBlock("Deliverables:"));
-          
-          if (milestone['deliverables'] is List) {
-            for (final deliverable in milestone['deliverables']) {
-              blocks.add(_createCheckboxBlock(deliverable, false));
-            }
-          }
-        }
-      }
-      
-      blocks.add(_createDividerBlock());
-
-      // Footer với metadata
-      blocks.add(_createQuoteBlock(
-        "Document duoc tao tu dong boi Mind AI App - ${DateTime.now().toLocal()}",
-      ));
-
-    } catch (e) {
-      AppLogger.e("Error formatting Notion blocks: $e");
-      // Return basic blocks nếu có lỗi
-      blocks.clear();
-      blocks.add(_createHeading1Block("Project Documentation"));
-      blocks.add(_createParagraphBlock("Error formatting content. Please check data structure."));
+      blocks.add(
+        _createQuoteBlock(
+          "Tài liệu được tạo vào lúc: ${DateTime.now().toLocal().toString().substring(0, 16)} bởi Mind AI App.",
+        ),
+      );
+    } catch (e, stackTrace) {
+      AppLogger.e("Error formatting Notion blocks");
+      return [
+        _createHeading1Block("Lỗi Tạo Tài Liệu"),
+        _createCalloutBlock(
+          "❗",
+          "Đã xảy ra lỗi trong quá trình định dạng nội dung. Vui lòng kiểm tra lại cấu trúc dữ liệu đầu vào. Chi tiết lỗi: $e",
+        ),
+      ];
     }
 
     return blocks;
   }
 
-  /// Format API endpoint details
-  String _formatApiEndpoint(Map<String, dynamic> endpoint) {
-    final buffer = StringBuffer();
+  // -- CÁC HÀM XÂY DỰNG TỪNG PHẦN --
 
-    buffer.writeln("**Description:** ${endpoint['description'] ?? 'N/A'}");
-    buffer.writeln();
-
-    if (endpoint['parameters'] != null) {
-      buffer.writeln("**Parameters:**");
-      for (final param in endpoint['parameters']) {
-        buffer.writeln(
-          "- `${param['name']}` (${param['type']}): ${param['description']}",
-        );
-      }
-      buffer.writeln();
-    }
-
-    if (endpoint['requestBody'] != null) {
-      buffer.writeln("**Request Body:**");
-      buffer.writeln("```json");
-      buffer.writeln(json.encode(endpoint['requestBody']));
-      buffer.writeln("```");
-      buffer.writeln();
-    }
-
-    if (endpoint['responseExample'] != null) {
-      buffer.writeln("**Response Example:**");
-      buffer.writeln("```json");
-      buffer.writeln(json.encode(endpoint['responseExample']));
-      buffer.writeln("```");
-    }
-
-    return buffer.toString();
+  List<Map<String, dynamic>> _buildOverviewSection(
+    Map<String, dynamic> content,
+  ) {
+    if (content['overview'] == null) return [];
+    return [
+      _createHeading2Block("1. Tổng Quan Dự Án"),
+      _createParagraphBlock(content['overview']),
+      if (content['keyMetrics'] != null)
+        _createCalloutBlock('🎯', "Key Metrics: ${content['keyMetrics']}"),
+      _createDividerBlock(),
+    ];
   }
 
-  // === Notion Block Helpers ===
+  List<Map<String, dynamic>> _buildRequirementsSection(
+    Map<String, dynamic> content,
+  ) {
+    final List<Map<String, dynamic>> sectionBlocks = [];
+
+    final funcReqs = content['functionalRequirements'];
+    final nonFuncReqs = content['nonFunctionalRequirements'];
+
+    if (funcReqs == null && nonFuncReqs == null) return [];
+
+    sectionBlocks.add(_createHeading2Block("2. Phân Tích Yêu Cầu"));
+
+    // Yêu cầu chức năng
+    if (funcReqs is List && funcReqs.isNotEmpty) {
+      sectionBlocks.add(_createHeading3Block("2.1. Yêu Cầu Chức Năng"));
+      for (final req in funcReqs) {
+        if (req is Map) {
+          final title = req['title'] ?? 'Chưa có tiêu đề';
+          final description = req['description'] ?? 'Chưa có mô tả.';
+          // Sử dụng toggle để gọn gàng hơn
+          sectionBlocks.add(
+            _createToggleBlock(title, [_createParagraphBlock(description)]),
+          );
+        }
+      }
+    }
+
+    // Yêu cầu phi chức năng
+    if (nonFuncReqs is List && nonFuncReqs.isNotEmpty) {
+      sectionBlocks.add(_createHeading3Block("2.2. Yêu Cầu Phi Chức Năng"));
+      for (final req in nonFuncReqs) {
+        sectionBlocks.add(_createBulletedListBlock(req.toString()));
+      }
+    }
+
+    sectionBlocks.add(_createDividerBlock());
+    return sectionBlocks;
+  }
+
+  List<Map<String, dynamic>> _buildArchitectureSection(
+    Map<String, dynamic> content,
+  ) {
+    if (content['architecture'] == null) return [];
+    return [
+      _createHeading2Block("3. Kiến Trúc Hệ Thống"),
+      _createParagraphBlock(content['architecture']),
+      _createDividerBlock(),
+    ];
+  }
+
+  List<Map<String, dynamic>> _buildTechStackSection(
+    Map<String, dynamic> content,
+  ) {
+    final frontend = content['frontendTech'];
+    final backend = content['backendTech'];
+
+    if (frontend == null && backend == null) return [];
+
+    // Sử dụng cột để trình bày đẹp hơn
+    final List<Map<String, dynamic>> feBlocks = [];
+    if (frontend is List && frontend.isNotEmpty) {
+      feBlocks.add(_createHeading3Block("Frontend"));
+      for (final tech in frontend) {
+        if (tech is Map) {
+          feBlocks.add(
+            _createBulletedListBlock("**${tech['name']}:** ${tech['reason']}"),
+          );
+        }
+      }
+    }
+
+    final List<Map<String, dynamic>> beBlocks = [];
+    if (backend is List && backend.isNotEmpty) {
+      beBlocks.add(_createHeading3Block("Backend"));
+      for (final tech in backend) {
+        if (tech is Map) {
+          beBlocks.add(
+            _createBulletedListBlock("**${tech['name']}:** ${tech['reason']}"),
+          );
+        }
+      }
+    }
+
+    return [
+      _createHeading2Block("4. Công Nghệ Sử Dụng"),
+      _createColumnListBlock([
+        feBlocks,
+        beBlocks,
+      ]), // Cột 1: Frontend, Cột 2: Backend
+      _createDividerBlock(),
+    ];
+  }
+
+  List<Map<String, dynamic>> _buildCoreFeaturesSection(
+    Map<String, dynamic> content,
+  ) {
+    final features = content['coreFeatures'];
+    if (features is! List || features.isEmpty) return [];
+
+    final List<Map<String, dynamic>> sectionBlocks = [];
+    sectionBlocks.add(_createHeading2Block("5. Tính Năng Chính"));
+
+    int index = 1;
+    for (final feature in features) {
+      if (feature is! Map) continue;
+
+      sectionBlocks.add(
+        _createHeading3Block("5.$index. ${feature['name'] ?? 'Chưa có tên'}"),
+      );
+      sectionBlocks.add(_createParagraphBlock(feature['description'] ?? ''));
+
+      if (feature['userStory'] != null) {
+        sectionBlocks.add(
+          _createQuoteBlock("User Story: ${feature['userStory']}"),
+        );
+      }
+
+      final criteria = feature['acceptanceCriteria'];
+      if (criteria is List && criteria.isNotEmpty) {
+        sectionBlocks.add(_createParagraphBlock("**Tiêu chí nghiệm thu:**"));
+        for (final item in criteria) {
+          sectionBlocks.add(_createCheckboxBlock(item.toString(), false));
+        }
+      }
+      index++;
+    }
+
+    sectionBlocks.add(_createDividerBlock());
+    return sectionBlocks;
+  }
+
+  List<Map<String, dynamic>> _buildDatabaseSection(
+    Map<String, dynamic> content,
+  ) {
+    final database = content['database'];
+    final tables = database?['tables'];
+    if (tables is! List || tables.isEmpty) return [];
+
+    final List<Map<String, dynamic>> sectionBlocks = [];
+    sectionBlocks.add(_createHeading2Block("6. Thiết Kế Database"));
+    sectionBlocks.add(
+      _createCalloutBlock(
+        'ℹ️',
+        'Dưới đây là schema dự kiến cho các bảng trong database. Mỗi bảng được đặt trong một toggle.',
+      ),
+    );
+
+    for (final table in tables) {
+      if (table is! Map) continue;
+
+      final tableName = table['name'] ?? 'Chưa có tên bảng';
+      final fields = table['fields'];
+      final List<Map<String, dynamic>> fieldBlocks = [];
+
+      if (fields is List && fields.isNotEmpty) {
+        for (final field in fields) {
+          if (field is Map) {
+            final fieldInfo =
+                "**${field['name']}** (`${field['type']}`) - ${field['description'] ?? 'Chưa có mô tả.'}";
+            fieldBlocks.add(_createBulletedListBlock(fieldInfo));
+          }
+        }
+      } else {
+        fieldBlocks.add(
+          _createParagraphBlock("Chưa có thông tin về các trường."),
+        );
+      }
+      sectionBlocks.add(_createToggleBlock('📜 $tableName', fieldBlocks));
+    }
+
+    sectionBlocks.add(_createDividerBlock());
+    return sectionBlocks;
+  }
+
+  List<Map<String, dynamic>> _buildApiSection(Map<String, dynamic> content) {
+    final endpoints = content['apiEndpoints'];
+    if (endpoints is! List || endpoints.isEmpty) return [];
+
+    final List<Map<String, dynamic>> sectionBlocks = [];
+    sectionBlocks.add(_createHeading2Block("7. API Documentation"));
+
+    for (final endpoint in endpoints) {
+      if (endpoint is! Map) continue;
+
+      final method = endpoint['method'] ?? 'GET';
+      final path = endpoint['path'] ?? '/';
+      final title = '$method $path';
+
+      sectionBlocks.add(
+        _createToggleBlock(title, _formatApiEndpointToBlocks(endpoint)),
+      );
+    }
+
+    sectionBlocks.add(_createDividerBlock());
+    return sectionBlocks;
+  }
+
+  List<Map<String, dynamic>> _buildImplementationPlanSection(
+    Map<String, dynamic> content,
+  ) {
+    final milestones = content['milestones'];
+    if (milestones is! List || milestones.isEmpty) return [];
+
+    final List<Map<String, dynamic>> sectionBlocks = [];
+    sectionBlocks.add(_createHeading2Block("8. Kế Hoạch Triển Khai"));
+
+    for (final milestone in milestones) {
+      if (milestone is! Map) continue;
+
+      sectionBlocks.add(
+        _createHeading3Block(milestone['phase'] ?? 'Giai đoạn'),
+      );
+
+      final List<Map<String, dynamic>> milestoneContent = [];
+      milestoneContent.add(
+        _createParagraphBlock(
+          "**Thời gian dự kiến:** ${milestone['duration'] ?? 'N/A'}",
+        ),
+      );
+
+      final deliverables = milestone['deliverables'];
+      if (deliverables is List && deliverables.isNotEmpty) {
+        milestoneContent.add(_createParagraphBlock("**Sản phẩm bàn giao:**"));
+        for (final item in deliverables) {
+          milestoneContent.add(_createCheckboxBlock(item.toString(), false));
+        }
+      }
+      sectionBlocks.addAll(milestoneContent);
+    }
+
+    sectionBlocks.add(_createDividerBlock());
+    return sectionBlocks;
+  }
+
+  /// -- CẢI TIẾN: Định dạng API endpoint thành một danh sách các block thay vì một string --
+  List<Map<String, dynamic>> _formatApiEndpointToBlocks(
+    Map<dynamic, dynamic> endpoint,
+  ) {
+    final List<Map<String, dynamic>> blocks = [];
+    final JsonEncoder encoder = JsonEncoder.withIndent('  ');
+
+    blocks.add(
+      _createParagraphBlock(
+        "**Mô tả:** ${endpoint['description'] ?? 'Chưa có mô tả.'}",
+      ),
+    );
+
+    final params = endpoint['parameters'];
+    if (params is List && params.isNotEmpty) {
+      blocks.add(_createParagraphBlock("**Parameters:**"));
+      for (final param in params) {
+        if (param is Map) {
+          blocks.add(
+            _createBulletedListBlock(
+              "`${param['name']}` (`${param['type']}`) - ${param['description'] ?? ''}",
+            ),
+          );
+        }
+      }
+    }
+
+    final reqBody = endpoint['requestBody'];
+    if (reqBody != null) {
+      blocks.add(_createParagraphBlock("**Request Body Example:**"));
+      blocks.add(_createCodeBlock(encoder.convert(reqBody), 'json'));
+    }
+
+    final resExample = endpoint['responseExample'];
+    if (resExample != null) {
+      blocks.add(_createParagraphBlock("**Response Example:**"));
+      blocks.add(_createCodeBlock(encoder.convert(resExample), 'json'));
+    }
+
+    return blocks;
+  }
+
+  // === CÁC HÀM HELPER TẠO NOTION BLOCK ===
+  // (Đã được bổ sung thêm các block mới và định dạng rich_text)
+
+  Map<String, dynamic> _createRichText(String text) {
+    // Helper để xử lý markdown đơn giản như **bold** và `code`
+    // Đây là một phiên bản đơn giản, có thể mở rộng thêm
+    // Hiện tại Notion API không hỗ trợ trực tiếp markdown trong một text object
+    // nên chúng ta sẽ giữ nó đơn giản.
+    return {
+      "type": "text",
+      "text": {"content": text},
+    };
+  }
 
   Map<String, dynamic> _createHeading1Block(String text) => {
-    "type": "heading_1",
     "heading_1": {
-      "rich_text": [
-        {
-          "type": "text",
-          "text": {"content": text},
-        },
-      ],
+      "rich_text": [_createRichText(text)],
+      "color": "default",
     },
   };
 
   Map<String, dynamic> _createHeading2Block(String text) => {
-    "type": "heading_2",
     "heading_2": {
-      "rich_text": [
-        {
-          "type": "text",
-          "text": {"content": text},
-        },
-      ],
+      "rich_text": [_createRichText(text)],
+      "color": "default",
+      "is_toggleable": false,
     },
   };
 
   Map<String, dynamic> _createHeading3Block(String text) => {
-    "type": "heading_3",
     "heading_3": {
-      "rich_text": [
-        {
-          "type": "text",
-          "text": {"content": text},
-        },
-      ],
+      "rich_text": [_createRichText(text)],
+      "color": "default",
+      "is_toggleable": false,
     },
   };
 
   Map<String, dynamic> _createParagraphBlock(String text) => {
-    "type": "paragraph",
     "paragraph": {
-      "rich_text": [
-        {
-          "type": "text",
-          "text": {"content": text},
-        },
-      ],
+      "rich_text": [_createRichText(text)],
     },
   };
 
   Map<String, dynamic> _createBulletedListBlock(String text) => {
-    "type": "bulleted_list_item",
     "bulleted_list_item": {
-      "rich_text": [
-        {
-          "type": "text",
-          "text": {"content": text},
-        },
-      ],
-    },
-  };
-
-  Map<String, dynamic> _createNumberedListBlock(String text) => {
-    "type": "numbered_list_item",
-    "numbered_list_item": {
-      "rich_text": [
-        {
-          "type": "text",
-          "text": {"content": text},
-        },
-      ],
+      "rich_text": [_createRichText(text)],
     },
   };
 
   Map<String, dynamic> _createCheckboxBlock(String text, bool checked) => {
-    "type": "to_do",
     "to_do": {
-      "rich_text": [
-        {
-          "type": "text",
-          "text": {"content": text},
-        },
-      ],
+      "rich_text": [_createRichText(text)],
       "checked": checked,
     },
   };
 
-  Map<String, dynamic> _createToggleBlock(String title, String content) => {
-    "type": "toggle",
+  Map<String, dynamic> _createToggleBlock(
+    String title,
+    List<Map<String, dynamic>> children,
+  ) => {
     "toggle": {
-      "rich_text": [
-        {
-          "type": "text",
-          "text": {"content": title},
-        },
-      ],
-      "children": [_createParagraphBlock(content)],
+      "rich_text": [_createRichText(title)],
+      "children": children,
     },
   };
 
   Map<String, dynamic> _createCalloutBlock(String emoji, String text) => {
-    "type": "callout",
     "callout": {
-      "rich_text": [{"type": "text", "text": {"content": text}}],
-      "icon": {"type": "emoji", "emoji": emoji.substring(0, 1)},
+      "icon": {"type": "emoji", "emoji": emoji},
+      "rich_text": [_createRichText(text)],
     },
   };
 
   Map<String, dynamic> _createQuoteBlock(String text) => {
-    "type": "quote",
     "quote": {
-      "rich_text": [
-        {
-          "type": "text",
-          "text": {"content": text},
-        },
-      ],
+      "rich_text": [_createRichText(text)],
     },
   };
 
-  Map<String, dynamic> _createDividerBlock() => {
-    "type": "divider",
-    "divider": {},
-  };
+  Map<String, dynamic> _createDividerBlock() => {"divider": {}};
 
   Map<String, dynamic> _createCodeBlock(String code, String language) => {
-    "type": "code",
     "code": {
       "rich_text": [
         {
@@ -502,22 +594,25 @@ class NotionAPIService {
     },
   };
 
-  Map<String, dynamic> _createTableBlock(List<Map<String, dynamic>> fields) {
-    // Notion API doesn't support direct table creation
-    // Use formatted text instead
-    final rows = <Map<String, dynamic>>[];
+  Map<String, dynamic> _createTableOfContentsBlock() => {
+    "table_of_contents": {"color": "default"},
+  };
 
-    // Header
-    rows.add(_createParagraphBlock("**Field Name | Type | Description**"));
-    rows.add(_createParagraphBlock("---|---|---"));
+  Map<String, dynamic> _createColumnListBlock(
+    List<List<Map<String, dynamic>>> columnsChildren,
+  ) {
+    final columns = columnsChildren
+        .map(
+          (children) => {
+            "object": "block",
+            "type": "column",
+            "column": {"children": children},
+          },
+        )
+        .toList();
 
-    // Data rows
-    for (final field in fields) {
-      final row =
-          "${field['name']} | ${field['type']} | ${field['description'] ?? ''}";
-      rows.add(_createParagraphBlock(row));
-    }
-
-    return _createParagraphBlock(""); // Return empty, will use rows separately
+    return {
+      "column_list": {"children": columns},
+    };
   }
 }

@@ -98,6 +98,42 @@ class RefinementController extends BaseController {
     collectionService.removeCustomProductType(customType);
   }
 
+  // ========== TEAM SIZE MANAGEMENT ==========
+
+  /// Increment team size with validation
+  void incrementTeamSize() {
+    AppLogger.d("User wants to increment team size");
+    collectionService.incrementTeamSize();
+  }
+
+  /// Decrement team size with validation
+  void decrementTeamSize() {
+    AppLogger.d("User wants to decrement team size");
+    collectionService.decrementTeamSize();
+  }
+
+  /// Update team size directly (for text input if needed)
+  void updateTeamSize(int size) {
+    AppLogger.d("User updated team size to: $size");
+    collectionService.updateTeamSize(size);
+  }
+
+  /// Validate team size and show error if invalid
+  bool validateTeamSize() {
+    final currentSize = collectionService.currentTeamSize;
+    if (currentSize < AppConstants.minTeamSize ||
+        currentSize > AppConstants.maxTeamSize) {
+      AppLogger.e("Invalid team size: $currentSize");
+      Get.snackbar(
+        AppConstants.validationIncompleteData,
+        AppConstants.validationInvalidTeamSize,
+        snackPosition: SnackPosition.TOP,
+      );
+      return false;
+    }
+    return true;
+  }
+
   // Validation and final submission
   void submitAndGenerate() async {
     AppLogger.d("Attempting to submit and generate suggestions");
@@ -155,6 +191,12 @@ class RefinementController extends BaseController {
           snackPosition: SnackPosition.TOP,
         );
         return;
+      }
+
+      // NEW: Team size validation
+      if (!validateTeamSize()) {
+        AppLogger.e("Validation failed: Invalid team size");
+        return; // validateTeamSize() already shows error message
       }
 
       // === NEW NAVIGATION FLOW ===
@@ -288,6 +330,29 @@ class RefinementController extends BaseController {
 
   // Get all available product types (default + custom)
   List<String> get allProductTypes => collectionService.getAllProductTypes();
+
+  // ========== TEAM SIZE GETTERS ==========
+
+  /// Current team size
+  int get currentTeamSize => collectionService.currentTeamSize;
+
+  /// Team size description for UI display
+  String get teamSizeDescription => collectionService.teamSizeDescription;
+
+  /// Check if this is a solo project
+  bool get isSoloProject => collectionService.isSoloProject;
+
+  /// Check if this is a small team
+  bool get isSmallTeam => collectionService.isSmallTeam;
+
+  /// Check if this is a large team
+  bool get isLargeTeam => collectionService.isLargeTeam;
+
+  /// Check if can increment team size
+  bool get canIncrementTeamSize => currentTeamSize < AppConstants.maxTeamSize;
+
+  /// Check if can decrement team size
+  bool get canDecrementTeamSize => currentTeamSize > AppConstants.minTeamSize;
 
   // Navigation helper
   void goBack() {

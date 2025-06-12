@@ -9,24 +9,31 @@ import 'data/services/network_connectivity_service.dart';
 import 'data/services/user_data_collection_service.dart';
 import 'data/services/ai_prompt_service.dart';
 import 'data/services/openrouter_api_service.dart';
+import 'data/services/database_service.dart';
 
 final sl = GetIt.instance;
 
 Future<void> initDI() async {
   // SharedPreferences
-  sl.registerSingletonAsync<SharedPreferences>(() => SharedPreferences.getInstance());
+  sl.registerSingletonAsync<SharedPreferences>(
+    () => SharedPreferences.getInstance(),
+  );
   await sl.isReady<SharedPreferences>();
-  
+
   // LocalStorageService
-  sl.registerLazySingleton<LocalStorageService>(() => LocalStorageService(sl<SharedPreferences>()));
-  
+  sl.registerLazySingleton<LocalStorageService>(
+    () => LocalStorageService(sl<SharedPreferences>()),
+  );
+
   // Dio (Network client)
   sl.registerLazySingleton<Dio>(() {
-    final dio = Dio(BaseOptions(
-      baseUrl: AppConfigs.baseUrl,
-      connectTimeout: AppConfigs.connectTimeout,
-      receiveTimeout: AppConfigs.receiveTimeout,
-    ));
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: AppConfigs.baseUrl,
+        connectTimeout: AppConfigs.connectTimeout,
+        receiveTimeout: AppConfigs.receiveTimeout,
+      ),
+    );
     dio.interceptors.add(AppInterceptor());
     return dio;
   });
@@ -35,12 +42,23 @@ Future<void> initDI() async {
   sl.registerLazySingleton<RestClient>(() => RestClient(sl<Dio>()));
 
   // NetworkConnectivityService (Singleton)
-  sl.registerSingleton<NetworkConnectivityService>(NetworkConnectivityService());
-  
+  sl.registerSingleton<NetworkConnectivityService>(
+    NetworkConnectivityService(),
+  );
+
   // UserDataCollectionService (Central data collection service)
   sl.registerSingleton<UserDataCollectionService>(UserDataCollectionService());
-  
+
+  // Database Service (SQLite)
+  sl.registerSingletonAsync<DatabaseService>(() async {
+    final dbService = DatabaseService();
+    await dbService.init();
+    return dbService;
+  });
+
   // AI Services
   sl.registerLazySingleton<AIPromptService>(() => AIPromptService.instance);
-  sl.registerLazySingleton<OpenRouterAPIService>(() => OpenRouterAPIService.instance);
-} 
+  sl.registerLazySingleton<OpenRouterAPIService>(
+    () => OpenRouterAPIService.instance,
+  );
+}

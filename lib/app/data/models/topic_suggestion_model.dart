@@ -102,37 +102,48 @@ class ProjectTopic extends Topic {
   });
 
   /// Create ProjectTopic from AI JSON response
-  /// 
+  ///
   /// Parse detailed project information từ OpenRouter AI response
-  /// 
+  ///
   /// [json] JSON response từ AI
   /// [basicTopic] Basic topic info để retain original data
   factory ProjectTopic.fromJson(Map<String, dynamic> json, Topic basicTopic) {
     // Parse core features
-    final coreFeaturesList = (json['coreFeatures'] as List<dynamic>?)
-        ?.map((item) => ExpandableItemData(
-              title: item['title']?.toString() ?? '',
-              content: item['content']?.toString() ?? '',
-            ))
-        .toList() ?? [];
+    final coreFeaturesList =
+        (json['coreFeatures'] as List<dynamic>?)
+            ?.map(
+              (item) => ExpandableItemData(
+                title: item['title']?.toString() ?? '',
+                content: item['content']?.toString() ?? '',
+              ),
+            )
+            .toList() ??
+        [];
 
     // Parse advanced features
-    final advancedFeaturesList = (json['advancedFeatures'] as List<dynamic>?)
-        ?.map((item) => ExpandableItemData(
-              title: item['title']?.toString() ?? '',
-              content: item['content']?.toString() ?? '',
-            ))
-        .toList() ?? [];
+    final advancedFeaturesList =
+        (json['advancedFeatures'] as List<dynamic>?)
+            ?.map(
+              (item) => ExpandableItemData(
+                title: item['title']?.toString() ?? '',
+                content: item['content']?.toString() ?? '',
+              ),
+            )
+            .toList() ??
+        [];
 
     // Parse foundational knowledge
-    final foundationalKnowledgeList = (json['foundationalKnowledge'] as List<dynamic>?)
-        ?.map((item) => item.toString())
-        .toList() ?? [];
+    final foundationalKnowledgeList =
+        (json['foundationalKnowledge'] as List<dynamic>?)
+            ?.map((item) => item.toString())
+            .toList() ??
+        [];
 
     // Parse specific knowledge
-    final specificKnowledgeList = (json['specificKnowledge'] as List<dynamic>?)
-        ?.map((item) {
-          final difficultyStr = item['difficulty']?.toString().toLowerCase() ?? 'easy';
+    final specificKnowledgeList =
+        (json['specificKnowledge'] as List<dynamic>?)?.map((item) {
+          final difficultyStr =
+              item['difficulty']?.toString().toLowerCase() ?? 'easy';
           KnowledgeDifficulty difficulty;
           switch (difficultyStr) {
             case 'medium':
@@ -144,23 +155,27 @@ class ProjectTopic extends Topic {
             default:
               difficulty = KnowledgeDifficulty.easy;
           }
-          
+
           return KnowledgeItem(
             title: item['title']?.toString() ?? '',
             difficulty: difficulty,
           );
-        })
-        .toList() ?? [];
+        }).toList() ??
+        [];
 
     // Parse implementation steps
-    final implementationStepsList = (json['implementationSteps'] as List<dynamic>?)
-        ?.map((item) => item.toString())
-        .toList() ?? [];
+    final implementationStepsList =
+        (json['implementationSteps'] as List<dynamic>?)
+            ?.map((item) => item.toString())
+            .toList() ??
+        [];
 
     // Parse code examples
-    final codeExamplesList = (json['codeExamples'] as List<dynamic>?)
-        ?.map((item) => CodeExample.fromJson(item as Map<String, dynamic>))
-        .toList() ?? [];
+    final codeExamplesList =
+        (json['codeExamples'] as List<dynamic>?)
+            ?.map((item) => CodeExample.fromJson(item as Map<String, dynamic>))
+            .toList() ??
+        [];
 
     return ProjectTopic(
       id: basicTopic.id,
@@ -171,9 +186,11 @@ class ProjectTopic extends Topic {
       matchScore: basicTopic.matchScore,
       duration: basicTopic.duration,
       feasibilityAssessment: basicTopic.feasibilityAssessment,
-      problemStatement: json['problemStatement']?.toString() ?? 
+      problemStatement:
+          json['problemStatement']?.toString() ??
           "Vấn đề cần giải quyết cho dự án ${basicTopic.title}",
-      proposedSolution: json['proposedSolution']?.toString() ?? 
+      proposedSolution:
+          json['proposedSolution']?.toString() ??
           "Hướng tiếp cận của dự án: ${basicTopic.description}",
       coreTechStack: basicTopic.technologies,
       coreFeatures: coreFeaturesList,
@@ -243,7 +260,8 @@ class ProjectTopic extends Topic {
         CodeExample(
           title: 'Basic Widget Setup',
           description: 'Khởi tạo widget cơ bản cho dự án',
-          code: '''class MyApp extends StatelessWidget {
+          code:
+              '''class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -256,7 +274,8 @@ class ProjectTopic extends Topic {
   }
 }''',
           language: 'dart',
-          explanation: 'Code này tạo ra widget chính của ứng dụng Flutter với MaterialApp làm root widget.',
+          explanation:
+              'Code này tạo ra widget chính của ứng dụng Flutter với MaterialApp làm root widget.',
         ),
       ],
     );

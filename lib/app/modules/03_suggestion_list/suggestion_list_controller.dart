@@ -18,9 +18,6 @@ class SuggestionListController extends ScrollablePageController {
   // AI Response data để filter theo category
   var aiResponseData = Rxn<AIProjectResponse>();
 
-  // Favorite management
-  final RxSet<String> favoriteTopicIds = <String>{}.obs;
-
   final selectedFilter = SuggestionFilter.safe.obs;
 
   @override
@@ -104,17 +101,6 @@ class SuggestionListController extends ScrollablePageController {
   void onTopicCardTapped(Topic topic) {
     Get.toNamed(Routes.PROJECT_DETAIL, arguments: topic);
   }
-
-  void toggleFavorite(String topicId) {
-    if (favoriteTopicIds.contains(topicId)) {
-      favoriteTopicIds.remove(topicId);
-    } else {
-      favoriteTopicIds.add(topicId);
-    }
-    update();
-  }
-
-  bool isFavorite(String topicId) => favoriteTopicIds.contains(topicId);
 
   void goToProjectDetail(dynamic projectData) {
     Get.toNamed(Routes.PROJECT_DETAIL, arguments: projectData);

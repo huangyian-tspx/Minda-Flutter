@@ -361,3 +361,4 @@ class ApiError implements Exception {
   @override
   int get hashCode => Object.hash(message, statusCode, type, errorCode);
 }
+ 

@@ -96,6 +96,8 @@ class AppConstants {
       'Vui lòng chọn ít nhất một công nghệ';
   static const String validationSelectProductTypes =
       'Vui lòng chọn ít nhất một loại hình sản phẩm';
+  static const String validationInvalidTeamSize =
+      'Số thành viên phải từ 1 đến 10 người';
   static const String validationMissingRequiredFields =
       'Vui lòng điền tất cả các mục bắt buộc trước khi tiếp tục';
 
@@ -126,6 +128,7 @@ class AppConstants {
       'Cung cấp thêm chi tiết để Minda hiểu bạn hơn';
   static const String sectionProjectScale = 'Xác định quy mô dự án';
   static const String sectionProductType = 'Loại hình sản phẩm';
+  static const String sectionTeamSize = 'Nguồn lực nhóm';
   static const String sectionSpecialRequirements =
       'Yêu cầu đặc biệt của giảng viên';
   static const String sectionProblemToSolve = 'Vấn đề bạn muốn giải quyết';
@@ -134,6 +137,8 @@ class AppConstants {
       'Thời gian dự kiến hoàn thành dự án';
   static const String sectionProductTypeDescription =
       'Chọn loại hình sản phẩm bạn muốn tạo';
+  static const String sectionTeamSizeDescription =
+      'Số thành viên tham gia dự án (bao gồm bạn)';
   static const String sectionSpecialRequirementsDescription =
       'Mô tả các yêu cầu đặc biệt từ giảng viên hoặc khóa học';
   static const String sectionProblemToSolveDescription =
@@ -144,6 +149,19 @@ class AppConstants {
       'Ví dụ: Phải dùng công nghệ X, phải có chức năng Y, báo cáo phải đạt 20 trang...';
   static const String hintProblemToSolve =
       'Bạn có thấy vấn đề nào thú vị trong cuộc sống mà công nghệ có thể giải quyết không? Hãy mô tả ở đây...';
+
+  // Team size configurations
+  static const int minTeamSize = 1;
+  static const int maxTeamSize = 10;
+  static const int defaultTeamSize = 1;
+
+  // Team size labels for UI
+  static const List<String> teamSizeLabels = [
+    'Solo (1 người)',
+    'Đôi (2 người)',
+    'Nhóm nhỏ (3-4 người)',
+    'Nhóm lớn (5+ người)',
+  ];
 
   // Slider labels for project duration
   static const List<String> projectDurationLabels = [

@@ -6,7 +6,6 @@ import '../../core/base/base_view.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/values/app_constants.dart';
 import '../../core/values/app_enums.dart';
-import '../../core/widgets/custom_app_bar.dart';
 import '../../core/widgets/index.dart';
 import 'refinement_controller.dart';
 
@@ -17,71 +16,86 @@ class RefinementView extends GetView<RefinementController> {
 
   @override
   Widget build(BuildContext context) {
-    return BaseView(
-      controller: controller,
-      child: Scaffold(
-        backgroundColor: AppTheme.background,
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Header with step indicator and title
-              _buildHeader(),
+    return GestureDetector(
+      onTap: () {
+        // Dismiss keyboard when tapping outside
+        FocusScope.of(context).unfocus();
+      },
+      child: BaseView(
+        controller: controller,
+        child: Scaffold(
+          backgroundColor: AppTheme.background,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Header with step indicator and title
+                _buildHeader(),
 
-              // Main content with scroll
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: 24.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 32.h),
+                // Main content with scroll
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.symmetric(horizontal: 24.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 32.h),
 
-                      // Project scale section with animation
-                      _buildAnimatedSection(
-                        delay: 200,
-                        child: _buildProjectScaleSection(context),
-                      ),
+                        // Project scale section with animation
+                        _buildAnimatedSection(
+                          delay: 200,
+                          child: _buildProjectScaleSection(context),
+                        ),
 
-                      SizedBox(height: 32.h),
+                        SizedBox(height: 32.h),
 
-                      // Product type section with animation
-                      _buildAnimatedSection(
-                        delay: 400,
-                        child: _buildProductTypeSection(),
-                      ),
+                        // Product type section with animation
+                        _buildAnimatedSection(
+                          delay: 400,
+                          child: _buildProductTypeSection(),
+                        ),
 
-                      SizedBox(height: 32.h),
+                        SizedBox(height: 32.h),
 
-                      // Special requirements section with animation
-                      _buildAnimatedSection(
-                        delay: 600,
-                        child: _buildSpecialRequirementsSection(),
-                      ),
+                        // Team size section with animation - NEW SECTION
+                        _buildAnimatedSection(
+                          delay: 500,
+                          child: _buildTeamSizeSection(),
+                        ),
 
-                      SizedBox(height: 32.h),
+                        SizedBox(height: 32.h),
 
-                      // Problem to solve section with animation
-                      _buildAnimatedSection(
-                        delay: 800,
-                        child: _buildProblemToSolveSection(),
-                      ),
+                        // Special requirements section with animation
+                        _buildAnimatedSection(
+                          delay: 600,
+                          child: _buildSpecialRequirementsSection(),
+                        ),
 
-                      SizedBox(height: 48.h),
+                        SizedBox(height: 32.h),
 
-                      // Generate suggestions button with animation
-                      _buildAnimatedSection(
-                        delay: 1000,
-                        child: _buildGenerateButton(),
-                      ),
+                        // Problem to solve section with animation
+                        _buildAnimatedSection(
+                          delay: 800,
+                          child: _buildProblemToSolveSection(),
+                        ),
 
-                      SizedBox(height: 32.h),
-                    ],
+                        SizedBox(height: 48.h),
+
+                        // Generate suggestions button with animation
+                        _buildAnimatedSection(
+                          delay: 1000,
+                          child: _buildGenerateButton(),
+                        ),
+
+                        SizedBox(height: 32.h),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          floatingActionButton: const GlobalFloatingMenu(),
         ),
       ),
     );
@@ -316,6 +330,218 @@ class RefinementView extends GetView<RefinementController> {
                 color: AppTheme.secondary.withOpacity(0.7),
                 fontStyle: FontStyle.italic,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Team size section
+  Widget _buildTeamSizeSection() {
+    return SectionCard(
+      title: AppConstants.sectionTeamSize,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            AppConstants.sectionTeamSizeDescription,
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: AppTheme.secondary,
+              height: 1.4,
+            ),
+          ),
+
+          SizedBox(height: 24.h),
+
+          // Team size controls with increment/decrement buttons
+          Obx(
+            () => Column(
+              children: [
+                // Team size display with description
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 12.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: AppTheme.primary, width: 1.5),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        '${controller.currentTeamSize} thành viên',
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        controller.teamSizeDescription,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: AppTheme.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: 16.h),
+
+                // Increment/Decrement buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Decrement button
+                    GestureDetector(
+                      onTap: controller.canDecrementTeamSize
+                          ? controller.decrementTeamSize
+                          : null,
+                      child: AnimatedContainer(
+                        duration: Duration(milliseconds: 200),
+                        width: 50.w,
+                        height: 50.h,
+                        decoration: BoxDecoration(
+                          color: controller.canDecrementTeamSize
+                              ? AppTheme.primary
+                              : AppTheme.secondary.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(25.r),
+                          boxShadow: controller.canDecrementTeamSize
+                              ? [
+                                  BoxShadow(
+                                    color: AppTheme.primary.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Icon(
+                          Icons.remove,
+                          color: Colors.white,
+                          size: 24.sp,
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(width: 24.w),
+
+                    // Current team size display
+                    Container(
+                      width: 80.w,
+                      height: 50.h,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary,
+                        borderRadius: BorderRadius.circular(25.r),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${controller.currentTeamSize}',
+                          style: TextStyle(
+                            fontSize: 20.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(width: 24.w),
+
+                    // Increment button
+                    GestureDetector(
+                      onTap: controller.canIncrementTeamSize
+                          ? controller.incrementTeamSize
+                          : null,
+                      child: AnimatedContainer(
+                        duration: Duration(milliseconds: 200),
+                        width: 50.w,
+                        height: 50.h,
+                        decoration: BoxDecoration(
+                          color: controller.canIncrementTeamSize
+                              ? AppTheme.primary
+                              : AppTheme.secondary.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(25.r),
+                          boxShadow: controller.canIncrementTeamSize
+                              ? [
+                                  BoxShadow(
+                                    color: AppTheme.primary.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 24.sp,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 16.h),
+
+                // Team context hints
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: AppTheme.chipInactive,
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Gợi ý theo quy mô:',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      if (controller.isSoloProject)
+                        Text(
+                          '• Tập trung vào tính năng cốt lõi\n• Quản lý thời gian hiệu quả\n• Sử dụng công cụ hỗ trợ tự động',
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: AppTheme.secondary,
+                            height: 1.3,
+                          ),
+                        )
+                      else if (controller.isSmallTeam)
+                        Text(
+                          '• Phân chia vai trò rõ ràng\n• Sử dụng git để quản lý code\n• Tích hợp và test thường xuyên',
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: AppTheme.secondary,
+                            height: 1.3,
+                          ),
+                        )
+                      else
+                        Text(
+                          '• Cần project manager\n• Sử dụng các công cụ quản lý dự án\n• Tập trung vào communication',
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: AppTheme.secondary,
+                            height: 1.3,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],

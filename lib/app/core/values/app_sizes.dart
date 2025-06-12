@@ -10,6 +10,8 @@ class AppSizes {
   static double p16 = 16.w;
   static double p20 = 20.w;
   static double p24 = 24.w;
+  static double p48 = 48.w;
+  static double p32 = 32.w;
 
   // Font size
   static double f12 = 12.sp;
@@ -22,4 +24,4 @@ class AppSizes {
   static double r8 = 8.r;
   static double r12 = 12.r;
   static double r16 = 16.r;
-} 
+}

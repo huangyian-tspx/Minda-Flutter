@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/values/app_enums.dart';
 import '../../core/values/app_sizes.dart';
+import '../../core/widgets/custom_app_bar.dart';
+import '../../core/widgets/global_floating_menu.dart';
 import '../../data/models/notion_history_model.dart';
 import 'notion_history_controller.dart';
 
@@ -15,6 +21,7 @@ class NotionHistoryView extends GetView<NotionHistoryController> {
       backgroundColor: AppTheme.background,
       appBar: _buildAppBar(),
       body: Obx(() => _buildBody()),
+      floatingActionButton: const GlobalFloatingMenu(),
     );
   }
 

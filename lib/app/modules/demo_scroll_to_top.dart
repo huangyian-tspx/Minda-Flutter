@@ -69,7 +69,7 @@ class CodeViewerDemoView extends GetView<CodeViewerDemoController> {
               width: double.infinity,
               margin: EdgeInsets.all(16),
               padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
+            decoration: BoxDecoration(
                 color: AppTheme.primary,
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -78,14 +78,14 @@ class CodeViewerDemoView extends GetView<CodeViewerDemoController> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              color: Colors.white,
                 ),
                 textAlign: TextAlign.center,
               ),
             ),
             
             // Simple list of code examples
-            Expanded(
+                    Expanded(
               child: ListView.builder(
                 padding: EdgeInsets.all(16),
                 itemCount: controller.sampleCodeExamples.length,
@@ -97,25 +97,25 @@ class CodeViewerDemoView extends GetView<CodeViewerDemoController> {
                       elevation: 2,
                       child: Padding(
                         padding: EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
                               '${index + 1}. ${example.title}',
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.bold,
                                 color: AppTheme.primary,
                               ),
                             ),
                             SizedBox(height: 8),
-                            Text(
+                          Text(
                               example.description,
-                              style: TextStyle(
-                                fontSize: 14,
+                            style: TextStyle(
+                              fontSize: 14,
                                 color: AppTheme.secondary,
-                              ),
                             ),
+                          ),
                             SizedBox(height: 12),
                             // Simple CodeViewer without complex features
                             CodeViewer(
@@ -123,24 +123,24 @@ class CodeViewerDemoView extends GetView<CodeViewerDemoController> {
                               language: example.language,
                               title: example.title,
                               maxHeight: 300,
-                            ),
+                ),
                             if (example.explanation != null) ...[
                               SizedBox(height: 12),
-                              Container(
+                    Container(
                                 width: double.infinity,
                                 padding: EdgeInsets.all(12),
-                                decoration: BoxDecoration(
+                      decoration: BoxDecoration(
                                   color: Colors.blue.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
+                      ),
+                      child: Text(
                                   'Explanation: ${example.explanation}',
-                                  style: TextStyle(
+                        style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.blue[800],
-                                  ),
-                                ),
-                              ),
+                        ),
+                      ),
+                    ),
                             ],
                           ],
                         ),
@@ -148,10 +148,10 @@ class CodeViewerDemoView extends GetView<CodeViewerDemoController> {
                     ),
                   );
                 },
-              ),
-            ),
-          ],
-        ),
+                      ),
+                    ),
+                  ],
+                ),
       ),
     );
   }
