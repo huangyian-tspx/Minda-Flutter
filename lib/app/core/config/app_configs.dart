@@ -11,7 +11,7 @@ class AppConfigs {
 
   // PAID API KEY (for production - currently commented out)
   static const String _paidApiKey =
-      "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";
+      "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";
 
   // Current active API key (using free key for testing)
   static const String openRouterApiKey =

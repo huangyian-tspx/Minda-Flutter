@@ -49,7 +49,6 @@ class NotionAPIService extends GetxService {
       LogInterceptor(
         requestBody: true,
         responseBody: true,
-        logPrint: (object) => AppLogger.d('[NOTION] ${object.toString()}'),
       ),
     );
   }
@@ -154,33 +153,135 @@ class NotionAPIService extends GetxService {
     }
   }
 
-  /// -- CẢI TIẾN LỚN: TÁCH LOGIC TẠO BLOCK THÀNH CÁC HÀM RIÊNG BIỆT --
-  /// Chuyển đổi nội dung từ AI thành danh sách các block của Notion.
+  // --- OVERVIEW ---
+  List<Map<String, dynamic>> _buildOverviewSection(
+    Map<String, dynamic> content,
+  ) {
+    final overview = content['projectOverview'] ?? content['overview'];
+    if (overview == null) return [];
+    return [
+      _createHeading2Block("1. Tổng Quan Dự Án"),
+      if (overview is String)
+        _createParagraphBlock(overview)
+      else ...[
+        if (overview['problemStatement'] != null)
+          _createParagraphBlock("Vấn đề: ${overview['problemStatement']}"),
+        if (overview['targetAudience'] != null)
+          _createParagraphBlock("Đối tượng: ${overview['targetAudience']}"),
+        if (overview['solution'] != null)
+          _createParagraphBlock("Giải pháp: ${overview['solution']}"),
+      ],
+      _createDividerBlock(),
+    ];
+  }
+
+  // --- USER PERSONAS ---
+  List<Map<String, dynamic>> _buildUserPersonasSection(
+    Map<String, dynamic> content,
+  ) {
+    final personas = content['userPersonas'];
+    if (personas is! List || personas.isEmpty) return [];
+    final blocks = <Map<String, dynamic>>[];
+    blocks.add(_createHeading2Block("2. User Personas"));
+    for (final persona in personas) {
+      if (persona is Map) {
+        blocks.add(_createHeading3Block(persona['name'] ?? 'Persona'));
+        if (persona['demographics'] != null) {
+          blocks.add(
+            _createParagraphBlock("Nhân khẩu học: ${persona['demographics']}"),
+          );
+        }
+        if (persona['goals'] is List && persona['goals'].isNotEmpty) {
+          blocks.add(_createParagraphBlock("Mục tiêu:"));
+          for (final g in persona['goals']) {
+            blocks.add(_createBulletedListBlock(g.toString()));
+          }
+        }
+        if (persona['frustrations'] is List &&
+            persona['frustrations'].isNotEmpty) {
+          blocks.add(_createParagraphBlock("Khó khăn:"));
+          for (final f in persona['frustrations']) {
+            blocks.add(_createBulletedListBlock(f.toString()));
+          }
+        }
+      }
+    }
+    blocks.add(_createDividerBlock());
+    return blocks;
+  }
+
+  // --- FUNCTIONAL & NON-FUNCTIONAL REQUIREMENTS ---
+  List<Map<String, dynamic>> _buildRequirementsSection(
+    Map<String, dynamic> content,
+  ) {
+    final funcReqs = content['functionalRequirements'];
+    final nonFuncReqs = content['nonFunctionalRequirements'];
+    if (funcReqs == null && nonFuncReqs == null) return [];
+    final blocks = <Map<String, dynamic>>[];
+    blocks.add(_createHeading2Block("3. Yêu Cầu Dự Án"));
+
+    if (funcReqs is List && funcReqs.isNotEmpty) {
+      blocks.add(_createHeading3Block("3.1. Yêu cầu chức năng"));
+      for (final req in funcReqs) {
+        if (req is Map) {
+          blocks.add(
+            _createToggleBlock(
+              req['name'] ?? req['title'] ?? req['id'] ?? 'Tính năng',
+              [
+                if (req['userStory'] != null)
+                  _createQuoteBlock(req['userStory']),
+                if (req['acceptanceCriteria'] is List)
+                  ...req['acceptanceCriteria'].map<Map<String, dynamic>>(
+                    (c) => _createCheckboxBlock(c.toString(), false),
+                  ),
+                if (req['description'] != null)
+                  _createParagraphBlock(req['description']),
+              ],
+            ),
+          );
+        }
+      }
+    }
+
+    if (nonFuncReqs is List && nonFuncReqs.isNotEmpty) {
+      blocks.add(_createHeading3Block("3.2. Yêu cầu phi chức năng"));
+      for (final req in nonFuncReqs) {
+        if (req is Map) {
+          blocks.add(
+            _createBulletedListBlock(
+              "[${req['category'] ?? ''}] ${req['requirement'] ?? req['description'] ?? req.toString()}",
+            ),
+          );
+        } else {
+          blocks.add(_createBulletedListBlock(req.toString()));
+        }
+      }
+    }
+    blocks.add(_createDividerBlock());
+    return blocks;
+  }
+
+  // --- OVERRIDE _formatContentToNotionBlocks ---
   List<Map<String, dynamic>> _formatContentToNotionBlocks(
     Map<String, dynamic> content,
   ) {
-    final List<Map<String, dynamic>> blocks = [];
-
+    final blocks = <Map<String, dynamic>>[];
     try {
-      // -- TIÊU ĐỀ CHÍNH & MỤC LỤC TỰ ĐỘNG --
       blocks.add(
         _createHeading1Block(content['title'] ?? 'Project Documentation'),
       );
       blocks.add(
         _createCalloutBlock(
           '✨',
-          'Đây là tài liệu dự án được tạo tự động bởi AI. Tất cả các mục chính đều có trong mục lục bên dưới.',
+          'Tài liệu dự án tự động bởi AI. Xem mục lục bên dưới.',
         ),
       );
       blocks.add(_createHeading2Block("Mục Lục"));
-      blocks.add(
-        _createTableOfContentsBlock(),
-      ); // Mục lục tự động dựa trên các heading
+      blocks.add(_createTableOfContentsBlock());
       blocks.add(_createDividerBlock());
 
-      // -- CÁC PHẦN CỦA TÀI LIỆU --
-      // Mỗi phần được tạo bởi một hàm riêng để dễ quản lý.
       blocks.addAll(_buildOverviewSection(content));
+      blocks.addAll(_buildUserPersonasSection(content));
       blocks.addAll(_buildRequirementsSection(content));
       blocks.addAll(_buildArchitectureSection(content));
       blocks.addAll(_buildTechStackSection(content));
@@ -189,133 +290,81 @@ class NotionAPIService extends GetxService {
       blocks.addAll(_buildApiSection(content));
       blocks.addAll(_buildImplementationPlanSection(content));
 
-      // -- FOOTER --
       blocks.add(_createDividerBlock());
       blocks.add(
         _createQuoteBlock(
-          "Tài liệu được tạo vào lúc: ${DateTime.now().toLocal().toString().substring(0, 16)} bởi Mind AI App.",
+          "Tài liệu được tạo vào: ${DateTime.now().toLocal().toString().substring(0, 16)} bởi Mind AI App.",
         ),
       );
-    } catch (e, stackTrace) {
-      AppLogger.e("Error formatting Notion blocks");
+    } catch (e) {
+      AppLogger.e("Error formatting Notion blocks: $e");
       return [
         _createHeading1Block("Lỗi Tạo Tài Liệu"),
         _createCalloutBlock(
           "❗",
-          "Đã xảy ra lỗi trong quá trình định dạng nội dung. Vui lòng kiểm tra lại cấu trúc dữ liệu đầu vào. Chi tiết lỗi: $e",
+          "Đã xảy ra lỗi khi định dạng nội dung. Chi tiết: $e",
         ),
       ];
     }
-
     return blocks;
   }
 
-  // -- CÁC HÀM XÂY DỰNG TỪNG PHẦN --
-
-  List<Map<String, dynamic>> _buildOverviewSection(
-    Map<String, dynamic> content,
-  ) {
-    if (content['overview'] == null) return [];
-    return [
-      _createHeading2Block("1. Tổng Quan Dự Án"),
-      _createParagraphBlock(content['overview']),
-      if (content['keyMetrics'] != null)
-        _createCalloutBlock('🎯', "Key Metrics: ${content['keyMetrics']}"),
-      _createDividerBlock(),
-    ];
-  }
-
-  List<Map<String, dynamic>> _buildRequirementsSection(
-    Map<String, dynamic> content,
-  ) {
-    final List<Map<String, dynamic>> sectionBlocks = [];
-
-    final funcReqs = content['functionalRequirements'];
-    final nonFuncReqs = content['nonFunctionalRequirements'];
-
-    if (funcReqs == null && nonFuncReqs == null) return [];
-
-    sectionBlocks.add(_createHeading2Block("2. Phân Tích Yêu Cầu"));
-
-    // Yêu cầu chức năng
-    if (funcReqs is List && funcReqs.isNotEmpty) {
-      sectionBlocks.add(_createHeading3Block("2.1. Yêu Cầu Chức Năng"));
-      for (final req in funcReqs) {
-        if (req is Map) {
-          final title = req['title'] ?? 'Chưa có tiêu đề';
-          final description = req['description'] ?? 'Chưa có mô tả.';
-          // Sử dụng toggle để gọn gàng hơn
-          sectionBlocks.add(
-            _createToggleBlock(title, [_createParagraphBlock(description)]),
-          );
-        }
-      }
-    }
-
-    // Yêu cầu phi chức năng
-    if (nonFuncReqs is List && nonFuncReqs.isNotEmpty) {
-      sectionBlocks.add(_createHeading3Block("2.2. Yêu Cầu Phi Chức Năng"));
-      for (final req in nonFuncReqs) {
-        sectionBlocks.add(_createBulletedListBlock(req.toString()));
-      }
-    }
-
-    sectionBlocks.add(_createDividerBlock());
-    return sectionBlocks;
-  }
-
+  // ...existing code...
   List<Map<String, dynamic>> _buildArchitectureSection(
     Map<String, dynamic> content,
   ) {
-    if (content['architecture'] == null) return [];
-    return [
-      _createHeading2Block("3. Kiến Trúc Hệ Thống"),
-      _createParagraphBlock(content['architecture']),
-      _createDividerBlock(),
-    ];
+    final arch = content['architecture'] ?? content['systemArchitecture'];
+    if (arch == null) return [];
+    final blocks = <Map<String, dynamic>>[];
+    blocks.add(_createHeading2Block("4. Kiến Trúc Hệ Thống"));
+    if (arch is String) {
+      blocks.add(_createParagraphBlock(arch));
+    } else if (arch is Map) {
+      if (arch['overview'] != null) {
+        blocks.add(_createParagraphBlock(arch['overview']));
+      }
+      if (arch['diagramDescription'] != null) {
+        blocks.add(
+          _createParagraphBlock("Sơ đồ: ${arch['diagramDescription']}"),
+        );
+      }
+      if (arch['components'] is List && arch['components'].isNotEmpty) {
+        for (final comp in arch['components']) {
+          if (comp is Map) {
+            blocks.add(
+              _createToggleBlock(comp['name'] ?? 'Thành phần', [
+                _createParagraphBlock(comp['description'] ?? ''),
+              ]),
+            );
+          }
+        }
+      }
+    }
+    blocks.add(_createDividerBlock());
+    return blocks;
   }
 
+  // --- TECH STACK ---
   List<Map<String, dynamic>> _buildTechStackSection(
     Map<String, dynamic> content,
   ) {
-    final frontend = content['frontendTech'];
-    final backend = content['backendTech'];
-
-    if (frontend == null && backend == null) return [];
-
-    // Sử dụng cột để trình bày đẹp hơn
-    final List<Map<String, dynamic>> feBlocks = [];
-    if (frontend is List && frontend.isNotEmpty) {
-      feBlocks.add(_createHeading3Block("Frontend"));
-      for (final tech in frontend) {
-        if (tech is Map) {
-          feBlocks.add(
-            _createBulletedListBlock("**${tech['name']}:** ${tech['reason']}"),
-          );
-        }
+    final techStack = content['techStack'];
+    if (techStack is! List || techStack.isEmpty) return [];
+    final blocks = <Map<String, dynamic>>[];
+    blocks.add(_createHeading2Block("5. Công Nghệ Sử Dụng"));
+    for (final tech in techStack) {
+      if (tech is Map) {
+        blocks.add(
+          _createBulletedListBlock(
+            "${tech['name'] ?? tech['tech']}: ${tech['reason'] ?? ''}",
+          ),
+        );
+      } else {
+        blocks.add(_createBulletedListBlock(tech.toString()));
       }
     }
-
-    final List<Map<String, dynamic>> beBlocks = [];
-    if (backend is List && backend.isNotEmpty) {
-      beBlocks.add(_createHeading3Block("Backend"));
-      for (final tech in backend) {
-        if (tech is Map) {
-          beBlocks.add(
-            _createBulletedListBlock("**${tech['name']}:** ${tech['reason']}"),
-          );
-        }
-      }
-    }
-
-    return [
-      _createHeading2Block("4. Công Nghệ Sử Dụng"),
-      _createColumnListBlock([
-        feBlocks,
-        beBlocks,
-      ]), // Cột 1: Frontend, Cột 2: Backend
-      _createDividerBlock(),
-    ];
+    blocks.add(_createDividerBlock());
+    return blocks;
   }
 
   List<Map<String, dynamic>> _buildCoreFeaturesSection(
@@ -323,140 +372,126 @@ class NotionAPIService extends GetxService {
   ) {
     final features = content['coreFeatures'];
     if (features is! List || features.isEmpty) return [];
-
-    final List<Map<String, dynamic>> sectionBlocks = [];
-    sectionBlocks.add(_createHeading2Block("5. Tính Năng Chính"));
-
-    int index = 1;
+    final blocks = <Map<String, dynamic>>[];
+    blocks.add(_createHeading2Block("6. Tính Năng Chính"));
+    int idx = 1;
     for (final feature in features) {
-      if (feature is! Map) continue;
-
-      sectionBlocks.add(
-        _createHeading3Block("5.$index. ${feature['name'] ?? 'Chưa có tên'}"),
-      );
-      sectionBlocks.add(_createParagraphBlock(feature['description'] ?? ''));
-
-      if (feature['userStory'] != null) {
-        sectionBlocks.add(
-          _createQuoteBlock("User Story: ${feature['userStory']}"),
+      if (feature is Map) {
+        blocks.add(
+          _createHeading3Block("6.$idx. ${feature['name'] ?? 'Tính năng'}"),
         );
-      }
-
-      final criteria = feature['acceptanceCriteria'];
-      if (criteria is List && criteria.isNotEmpty) {
-        sectionBlocks.add(_createParagraphBlock("**Tiêu chí nghiệm thu:**"));
-        for (final item in criteria) {
-          sectionBlocks.add(_createCheckboxBlock(item.toString(), false));
+        if (feature['description'] != null) {
+          blocks.add(_createParagraphBlock(feature['description']));
         }
+        if (feature['userStory'] != null) {
+          blocks.add(_createQuoteBlock(feature['userStory']));
+        }
+        if (feature['acceptanceCriteria'] is List) {
+          for (final c in feature['acceptanceCriteria']) {
+            blocks.add(_createCheckboxBlock(c.toString(), false));
+          }
+        }
+        idx++;
       }
-      index++;
     }
-
-    sectionBlocks.add(_createDividerBlock());
-    return sectionBlocks;
+    blocks.add(_createDividerBlock());
+    return blocks;
   }
 
   List<Map<String, dynamic>> _buildDatabaseSection(
     Map<String, dynamic> content,
   ) {
-    final database = content['database'];
-    final tables = database?['tables'];
-    if (tables is! List || tables.isEmpty) return [];
-
-    final List<Map<String, dynamic>> sectionBlocks = [];
-    sectionBlocks.add(_createHeading2Block("6. Thiết Kế Database"));
-    sectionBlocks.add(
-      _createCalloutBlock(
-        'ℹ️',
-        'Dưới đây là schema dự kiến cho các bảng trong database. Mỗi bảng được đặt trong một toggle.',
-      ),
-    );
-
-    for (final table in tables) {
-      if (table is! Map) continue;
-
-      final tableName = table['name'] ?? 'Chưa có tên bảng';
-      final fields = table['fields'];
-      final List<Map<String, dynamic>> fieldBlocks = [];
-
-      if (fields is List && fields.isNotEmpty) {
-        for (final field in fields) {
-          if (field is Map) {
-            final fieldInfo =
-                "**${field['name']}** (`${field['type']}`) - ${field['description'] ?? 'Chưa có mô tả.'}";
-            fieldBlocks.add(_createBulletedListBlock(fieldInfo));
+    final schema = content['databaseSchema'] ?? content['database'];
+    if (schema is! List || schema.isEmpty) return [];
+    final blocks = <Map<String, dynamic>>[];
+    blocks.add(_createHeading2Block("7. Thiết Kế Database"));
+    for (final table in schema) {
+      if (table is Map) {
+        final columns = table['columns'] ?? table['fields'];
+        final colBlocks = <Map<String, dynamic>>[];
+        if (columns is List && columns.isNotEmpty) {
+          for (final col in columns) {
+            if (col is Map) {
+              colBlocks.add(
+                _createBulletedListBlock(
+                  "**${col['name']}** (${col['type']}) - ${col['description'] ?? ''}",
+                ),
+              );
+            }
           }
         }
-      } else {
-        fieldBlocks.add(
-          _createParagraphBlock("Chưa có thông tin về các trường."),
+        if (table['relations'] != null) {
+          colBlocks.add(
+            _createParagraphBlock("Quan hệ: ${table['relations']}"),
+          );
+        }
+        blocks.add(
+          _createToggleBlock(
+            table['tableName'] ?? table['name'] ?? 'Bảng',
+            colBlocks,
+          ),
         );
       }
-      sectionBlocks.add(_createToggleBlock('📜 $tableName', fieldBlocks));
     }
-
-    sectionBlocks.add(_createDividerBlock());
-    return sectionBlocks;
+    blocks.add(_createDividerBlock());
+    return blocks;
   }
 
   List<Map<String, dynamic>> _buildApiSection(Map<String, dynamic> content) {
     final endpoints = content['apiEndpoints'];
     if (endpoints is! List || endpoints.isEmpty) return [];
-
-    final List<Map<String, dynamic>> sectionBlocks = [];
-    sectionBlocks.add(_createHeading2Block("7. API Documentation"));
-
-    for (final endpoint in endpoints) {
-      if (endpoint is! Map) continue;
-
-      final method = endpoint['method'] ?? 'GET';
-      final path = endpoint['path'] ?? '/';
-      final title = '$method $path';
-
-      sectionBlocks.add(
-        _createToggleBlock(title, _formatApiEndpointToBlocks(endpoint)),
-      );
+    final blocks = <Map<String, dynamic>>[];
+    blocks.add(_createHeading2Block("8. API Documentation"));
+    for (final ep in endpoints) {
+      if (ep is Map) {
+        final title = "${ep['method'] ?? 'METHOD'} ${ep['path'] ?? ''}";
+        final children = <Map<String, dynamic>>[];
+        if (ep['description'] != null) {
+          children.add(_createParagraphBlock(ep['description']));
+        }
+        if (ep['requestBody'] != null) {
+          children.add(_createParagraphBlock("Request:"));
+          children.add(_createCodeBlock(jsonEncode(ep['requestBody']), 'json'));
+        }
+        if (ep['responseSuccess'] != null) {
+          children.add(_createParagraphBlock("Response:"));
+          children.add(
+            _createCodeBlock(jsonEncode(ep['responseSuccess']), 'json'),
+          );
+        }
+        blocks.add(_createToggleBlock(title, children));
+      }
     }
-
-    sectionBlocks.add(_createDividerBlock());
-    return sectionBlocks;
+    blocks.add(_createDividerBlock());
+    return blocks;
   }
 
   List<Map<String, dynamic>> _buildImplementationPlanSection(
     Map<String, dynamic> content,
   ) {
-    final milestones = content['milestones'];
-    if (milestones is! List || milestones.isEmpty) return [];
-
-    final List<Map<String, dynamic>> sectionBlocks = [];
-    sectionBlocks.add(_createHeading2Block("8. Kế Hoạch Triển Khai"));
-
-    for (final milestone in milestones) {
-      if (milestone is! Map) continue;
-
-      sectionBlocks.add(
-        _createHeading3Block(milestone['phase'] ?? 'Giai đoạn'),
-      );
-
-      final List<Map<String, dynamic>> milestoneContent = [];
-      milestoneContent.add(
-        _createParagraphBlock(
-          "**Thời gian dự kiến:** ${milestone['duration'] ?? 'N/A'}",
-        ),
-      );
-
-      final deliverables = milestone['deliverables'];
-      if (deliverables is List && deliverables.isNotEmpty) {
-        milestoneContent.add(_createParagraphBlock("**Sản phẩm bàn giao:**"));
-        for (final item in deliverables) {
-          milestoneContent.add(_createCheckboxBlock(item.toString(), false));
+    final roadmap = content['projectRoadmap'] ?? content['milestones'];
+    if (roadmap is! List || roadmap.isEmpty) return [];
+    final blocks = <Map<String, dynamic>>[];
+    blocks.add(_createHeading2Block("9. Lộ Trình Triển Khai"));
+    for (final phase in roadmap) {
+      if (phase is Map) {
+        blocks.add(_createHeading3Block(phase['phase'] ?? 'Giai đoạn'));
+        if (phase['goals'] is List && phase['goals'].isNotEmpty) {
+          blocks.add(_createParagraphBlock("Mục tiêu:"));
+          for (final g in phase['goals']) {
+            blocks.add(_createBulletedListBlock(g.toString()));
+          }
+        }
+        if (phase['keyFeatures'] is List && phase['keyFeatures'].isNotEmpty) {
+          blocks.add(_createParagraphBlock("Tính năng chính:"));
+          for (final f in phase['keyFeatures']) {
+            blocks.add(_createBulletedListBlock(f.toString()));
+          }
         }
       }
-      sectionBlocks.addAll(milestoneContent);
     }
-
-    sectionBlocks.add(_createDividerBlock());
-    return sectionBlocks;
+    blocks.add(_createDividerBlock());
+    return blocks;
   }
 
   /// -- CẢI TIẾN: Định dạng API endpoint thành một danh sách các block thay vì một string --

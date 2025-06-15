@@ -99,7 +99,14 @@ class SuggestionListController extends ScrollablePageController {
   }
 
   void onTopicCardTapped(Topic topic) {
-    Get.toNamed(Routes.PROJECT_DETAIL, arguments: topic);
+    // Lấy category đúng từ filter đang chọn
+    String category = selectedFilter.value == SuggestionFilter.challenging
+        ? 'challenging'
+        : 'safe';
+    Get.toNamed(
+      Routes.PROJECT_DETAIL,
+      arguments: {'topic': topic, 'category': category},
+    );
   }
 
   void goToProjectDetail(dynamic projectData) {

@@ -8,6 +8,7 @@ import '../../core/utils/app_logger.dart';
 import '../models/ai_response_model.dart';
 import '../models/api_error.dart';
 import '../models/api_response.dart';
+import '../models/project_dashboard_model.dart';
 import '../models/topic_suggestion_model.dart';
 import '../models/user_input_data.dart';
 import 'ai_prompt_service.dart';
@@ -700,6 +701,25 @@ class OpenRouterAPIService {
           technicalDetails: e.toString(),
         ),
       );
+    }
+  }
+
+  /// Call OpenRouter API to create a project dashboard from prompt
+  Future<ApiResponse<ProjectDashboardModel>> createProjectDashboard(String prompt) async {
+    try {
+      final response = await _dio.post(
+        '/v1/dashboard',
+        data: jsonEncode({'prompt': prompt}),
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data is String ? jsonDecode(response.data) : response.data;
+        final dashboard = ProjectDashboardModel.fromJson(data);
+        return Success(dashboard);
+      } else {
+        return Failure(ApiError(message: 'Lỗi API: ${response.statusCode}'));
+      }
+    } catch (e) {
+      return Failure(ApiError(message: e.toString()));
     }
   }
 }

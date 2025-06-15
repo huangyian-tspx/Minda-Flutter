@@ -271,6 +271,12 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
                   : SizedBox.shrink(),
             ),
 
+            // Reference Links Section
+            _buildReferenceLinksSection(topic),
+
+            // Github Links Section
+            _buildGithubLinksSection(topic),
+
             // Action Buttons Section
             _buildActionButtonsSection(),
 
@@ -774,6 +780,68 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
     );
   }
 
+  /// Reference Links Section
+  Widget _buildReferenceLinksSection(ProjectTopic topic) {
+    if (topic.referenceLinks.isEmpty) return SizedBox.shrink();
+    return Column(
+      children: [
+        SizedBox(height: AppSizes.p16),
+        TypewriterAnimatedContainer(
+          text: '',
+          slideDelay: Duration(milliseconds: 900),
+          child: SectionCard(
+            title: 'Tài liệu tham khảo',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: topic.referenceLinks
+                  .map(
+                    (link) => _LinkTile(
+                      title: link.title,
+                      url: link.url,
+                      icon: Icons.menu_book_rounded,
+                      color: AppTheme.primary,
+                      onTap: () => controller.openUrl(link.url),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Github Links Section
+  Widget _buildGithubLinksSection(ProjectTopic topic) {
+    if (topic.githubLinks.isEmpty) return SizedBox.shrink();
+    return Column(
+      children: [
+        SizedBox(height: AppSizes.p16),
+        TypewriterAnimatedContainer(
+          text: '',
+          slideDelay: Duration(milliseconds: 950),
+          child: SectionCard(
+            title: 'Source code & Github',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: topic.githubLinks
+                  .map(
+                    (link) => _LinkTile(
+                      title: link.title,
+                      url: link.url,
+                      icon: Icons.code_rounded,
+                      color: Colors.black87,
+                      onTap: () => controller.openUrl(link.url),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   /// Action Buttons Section
   Widget _buildActionButtonsSection() {
     return Column(
@@ -783,6 +851,26 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
           title: 'Hành động',
           child: Column(
             children: [
+              // Bắt đầu Dự án này (Start Project) button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: controller.showProjectSetupDialog,
+                  icon: Icon(Icons.rocket_launch),
+                  label: Text('🚀 BẮT ĐẦU DỰ ÁN NÀY'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFFFB6C1), // Light pink
+                    foregroundColor: Colors.black87,
+                    padding: EdgeInsets.symmetric(vertical: AppSizes.p16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppSizes.r12),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+              SizedBox(height: AppSizes.p12),
+
               // Tạo Checklist
               // SizedBox(
               //   width: double.infinity,
@@ -860,6 +948,65 @@ class ProjectDetailView extends GetView<ProjectDetailController> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Custom LinkTile widget for beautiful, modern clickable links
+class _LinkTile extends StatelessWidget {
+  final String title;
+  final String url;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  const _LinkTile({
+    required this.title,
+    required this.url,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: 180),
+          curve: Curves.easeInOut,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.07),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 22),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15.r,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Icon(
+                Icons.open_in_new_rounded,
+                color: color.withOpacity(0.7),
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,6 +1,6 @@
 import '../../core/utils/app_logger.dart';
-import '../models/user_input_data.dart';
 import '../models/topic_suggestion_model.dart';
+import '../models/user_input_data.dart';
 
 /// Service chuyên tạo prompt tối ưu cho AI từ dữ liệu người dùng
 class AIPromptService {
@@ -245,6 +245,16 @@ $skillContext
       "language": "dart",
       "explanation": "Hướng dẫn integrate với external services và handle edge cases"
     }
+  ],
+  "referenceLinks": [
+    {"title": "Flutter Official Docs", "url": "https://docs.flutter.dev/"},
+    {"title": "RESTful API Design", "url": "https://restfulapi.net/"}
+    // Thêm các link tài liệu khác
+  ],
+  "githubLinks": [
+    {"title": "Sample Flutter Project", "url": "https://github.com/flutter/samples"},
+    {"title": "Node.js API Boilerplate", "url": "https://github.com/hagopj13/node-express-boilerplate"}
+    // Thêm các link source code khác
   ]
 }
 
@@ -256,6 +266,7 @@ $skillContext
 - Implementation steps phải realistic cho ${userData.projectDurationInMonths.toInt()} tháng
 - Knowledge requirements phải phù hợp với level ${userData.level}
 - Tất cả phải customized cho team ${userData.teamSize} người
+- referenceLinks và githubLinks phải là mảng, mỗi phần tử có title và url
 
 CHỈ TRẢ VỀ JSON, KHÔNG COMMENT THÊM.''';
 
@@ -328,117 +339,142 @@ CHỈ TRẢ VỀ JSON, KHÔNG COMMENT THÊM.''';
     return '''
 Bạn là Technical Writer chuyên nghiệp. Tạo tài liệu dự án TOÀN DIỆN cho "${project['name']}" theo chuẩn enterprise.
 
-**QUAN TRỌNG: CHỈ TRẢ VỀ JSON HỢP LỆ, KHÔNG THÊM TEXT, KHÔNG GIẢI THÍCH, KHÔNG COMMENT.**
+**CHỈ TRẢ VỀ JSON HỢP LỆ, KHÔNG GIẢI THÍCH, KHÔNG COMMENT, KHÔNG MARKDOWN.**
 
-**THÔNG TIN DỰ ÁN:**
-• Name: ${project['name']}
-• Features: ${project['features']}
-• Tech Stack: ${project['techStack']}
-• Code Examples: ${project['codeExamples']?.length ?? 0} examples
-
-**YÊU CẦU DOCUMENTATION (JSON FORMAT):**
 {
   "title": "${project['name']} - Technical Documentation",
   "projectOverview": {
-    "description": "Mô tả chi tiết dự án, mục tiêu và value proposition (200-300 từ)",
     "problemStatement": "Vấn đề cụ thể mà dự án giải quyết",
     "targetAudience": "Đối tượng người dùng chính",
+    "solution": "Giải pháp tổng quan",
     "businessValue": "Giá trị kinh doanh và impact measurement"
-  },
-  "technicalSpecification": {
-    "architecture": {
-      "overview": "Kiến trúc tổng quan của hệ thống",
-      "designPatterns": ["Pattern 1", "Pattern 2", "Pattern 3"],
-      "scalabilityConsiderations": "Các yếu tố về khả năng mở rộng"
-    },
-    "techStack": {
-      "frontend": [{"name": "Technology", "version": "x.x.x", "purpose": "Mục đích sử dụng"}],
-      "backend": [{"name": "Technology", "version": "x.x.x", "purpose": "Mục đích sử dụng"}],
-      "database": [{"name": "Database", "purpose": "Lý do chọn"}],
-      "devOps": [{"name": "Tool", "purpose": "Automation purpose"}]
-    }
   },
   "functionalRequirements": [
     {
-      "featureId": "F001",
-      "title": "Feature Name",
-      "description": "Chi tiết tính năng",
-      "userStories": [
-        "As a [user type], I want [goal] so that [benefit]"
-      ],
+      "name": "Tên tính năng",
+      "description": "Mô tả chi tiết",
+      "userStory": "As a [user], I want [goal] so that [benefit]",
       "acceptanceCriteria": [
         "Given [context], when [action], then [outcome]"
-      ],
-      "priority": "High/Medium/Low",
-      "complexity": "Simple/Medium/Complex"
+      ]
     }
+    // Thêm các tính năng khác
   ],
-  "nonFunctionalRequirements": {
-    "performance": {
-      "responseTime": "< 2 seconds for 95% of requests",
-      "throughput": "1000 concurrent users",
-      "scalability": "Horizontal scaling capability"
+  "nonFunctionalRequirements": [
+    {
+      "category": "Performance",
+      "requirement": "Thời gian phản hồi < 2s cho 95% request"
     },
-    "security": {
-      "authentication": "JWT-based authentication",
-      "authorization": "Role-based access control",
-      "dataProtection": "AES-256 encryption"
-    },
-    "reliability": {
-      "availability": "99.9% uptime",
-      "errorRate": "< 0.1% error rate",
-      "backupStrategy": "Daily automated backups"
+    {
+      "category": "Security",
+      "requirement": "Dữ liệu phải được mã hóa AES-256"
     }
+    // Thêm các yêu cầu khác
+  ],
+  "technicalSpecification": {
+    "architecture": {
+      "overview": "Kiến trúc tổng quan hệ thống",
+      "diagramDescription": "Mô tả sơ đồ kiến trúc",
+      "components": [
+        {"name": "Frontend", "description": "Vai trò và công nghệ"},
+        {"name": "Backend", "description": "Vai trò và công nghệ"}
+      ]
+    },
+    "techStack": [
+      {"name": "Flutter", "reason": "Cross-platform UI"},
+      {"name": "Node.js", "reason": "Backend API"},
+      {"name": "MongoDB", "reason": "NoSQL database"}
+    ]
   },
+  "coreFeatures": [
+    {
+      "name": "Đăng nhập/Đăng ký",
+      "description": "Cho phép người dùng tạo tài khoản và đăng nhập",
+      "userStory": "As a user, I want to register and login so that I can use the app",
+      "acceptanceCriteria": [
+        "Đăng ký thành công với email hợp lệ",
+        "Đăng nhập thành công với tài khoản đã tạo"
+      ]
+    }
+    // Thêm các tính năng chính khác
+  ],
   "databaseDesign": {
     "schema": [
       {
         "tableName": "users",
-        "fields": [
-          {"name": "id", "type": "UUID", "constraints": "PRIMARY KEY", "description": "Unique identifier"},
-          {"name": "email", "type": "VARCHAR(255)", "constraints": "UNIQUE NOT NULL", "description": "User email address"}
+        "columns": [
+          {"name": "id", "type": "UUID", "description": "User ID"},
+          {"name": "email", "type": "VARCHAR(255)", "description": "Email"}
         ],
-        "relationships": [
-          {"type": "hasMany", "target": "projects", "foreignKey": "user_id"}
-        ]
+        "relations": "Một user có nhiều orders"
       }
-    ],
-    "indexes": [
-      {"table": "users", "columns": ["email"], "type": "UNIQUE"},
-      {"table": "projects", "columns": ["user_id", "created_at"], "type": "COMPOSITE"}
+      // Thêm các bảng khác
     ]
   },
   "apiDocumentation": {
-    "baseUrl": "https://api.example.com/v1",
-    "authentication": "Bearer token required",
     "endpoints": [
       {
-        "method": "GET",
-        "path": "/users/{id}",
-        "description": "Retrieve user information",
-        "parameters": [
-          {"name": "id", "type": "string", "required": true, "description": "User UUID"}
-        ],
-        "responses": {
-          "200": {"description": "Success", "schema": "User object"},
-          "404": {"description": "User not found"},
-          "401": {"description": "Unauthorized"}
-        },
-        "example": {
-          "request": "GET /users/123e4567-e89b-12d3-a456-426614174000",
-          "response": {"id": "123e4567-e89b-12d3-a456-426614174000", "email": "user@example.com"}
-        }
+        "method": "POST",
+        "path": "/api/v1/auth/register",
+        "description": "Đăng ký tài khoản mới",
+        "requestBody": {"email": "string", "password": "string"},
+        "responseSuccess": {"id": "uuid", "email": "string"}
       }
+      // Thêm các endpoint khác
     ]
-  }
+  },
+  "projectRoadmap": [
+    {
+      "phase": "Giai đoạn 1",
+      "goals": ["Hoàn thiện thiết kế UI", "Xây dựng API cơ bản"],
+      "keyFeatures": ["Đăng nhập", "Đăng ký"]
+    }
+    // Thêm các giai đoạn khác
+  ],
+  "referenceLinks": [
+    {"title": "Flutter Official Docs", "url": "https://docs.flutter.dev/"},
+    {"title": "RESTful API Design", "url": "https://restfulapi.net/"}
+    // Thêm các link tài liệu khác
+  ],
+  "githubLinks": [
+    {"title": "Sample Flutter Project", "url": "https://github.com/flutter/samples"},
+    {"title": "Node.js API Boilerplate", "url": "https://github.com/hagopj13/node-express-boilerplate"}
+    // Thêm các link source code khác
+  ]
 }
 
 **LƯU Ý:**
-1. CHỈ TRẢ VỀ JSON HỢP LỆ, KHÔNG THÊM TEXT
-2. ĐẢM BẢO TẤT CẢ CÁC KEY ĐỀU CÓ DẤU NHÁY KÉP
-3. ĐẢM BẢO SỐ LƯỢNG DẤU NGOẶC NHỌN MỞ VÀ ĐÓNG BẰNG NHAU
-4. KHÔNG THÊM COMMENTS HOẶC GIẢI THÍCH
-5. KHÔNG THÊM MARKDOWN FORMATTING
+- CHỈ TRẢ VỀ JSON HỢP LỆ, KHÔNG THÊM TEXT, COMMENT, MARKDOWN.
+- ĐẢM BẢO ĐẦY ĐỦ CÁC TRƯỜNG NHƯ TRÊN.
 ''';
+  }
+
+  /// Generate prompt for detailed project dashboard based on selected phases/deliverables
+  Future<String> generateDetailedDashboardPrompt(
+    ProjectTopic project,
+    List phases, // List<ProjectPhase>
+  ) async {
+    // Compose a detailed prompt for the AI
+    final phaseDescriptions = phases.map((p) {
+      final deliverables = (p.deliverables as List).join(', ');
+      return '- ${p.name}: $deliverables';
+    }).join('\n');
+    final prompt = '''
+Bạn là Project Manager AI. Hãy tạo một Project Dashboard chi tiết cho dự án sau:
+
+Tên dự án: ${project.title}
+Mô tả: ${project.description}
+
+Các giai đoạn & deliverables:
+$phaseDescriptions
+
+YÊU CẦU:
+- Dashboard phải chia rõ từng giai đoạn, mỗi giai đoạn có checklist deliverables, deadline gợi ý, tips thực hiện.
+- Có tổng quan tiến độ, trạng thái từng phase, và gợi ý quản lý nhóm.
+- Output: JSON object với các trường: phases (name, deliverables, checklist, tips, deadline), overallProgress, teamTips.
+- KHÔNG GIẢI THÍCH, KHÔNG MARKDOWN, CHỈ JSON.
+''';
+    AppLogger.d('Generated dashboard prompt: ' + prompt);
+    return prompt;
   }
 }

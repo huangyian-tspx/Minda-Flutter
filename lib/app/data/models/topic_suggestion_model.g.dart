@@ -58,3 +58,9 @@ Map<String, dynamic> _$TopicToJson(Topic instance) => <String, dynamic>{
   'duration': instance.duration,
   'feasibilityAssessment': instance.feasibilityAssessment,
 };
+
+ReferenceLink _$ReferenceLinkFromJson(Map<String, dynamic> json) =>
+    ReferenceLink(title: json['title'] as String, url: json['url'] as String);
+
+Map<String, dynamic> _$ReferenceLinkToJson(ReferenceLink instance) =>
+    <String, dynamic>{'title': instance.title, 'url': instance.url};

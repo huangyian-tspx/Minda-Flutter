@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/values/app_sizes.dart';
+import '../../core/widgets/custom_chip.dart';
 
 /// Loading dialog với message
 class LoadingDialog extends StatelessWidget {
@@ -426,4 +427,121 @@ class ExistingNotionDialog extends StatelessWidget {
       ),
     );
   }
-} 
+}
+
+class ProjectPhase {
+  String name;
+  List<String> deliverables;
+  ProjectPhase({required this.name, required this.deliverables});
+}
+
+class ProjectSetupDialog extends StatefulWidget {
+  final List<ProjectPhase> initialPhases;
+  const ProjectSetupDialog({Key? key, required this.initialPhases}) : super(key: key);
+
+  @override
+  State<ProjectSetupDialog> createState() => _ProjectSetupDialogState();
+}
+
+class _ProjectSetupDialogState extends State<ProjectSetupDialog> {
+  late List<TextEditingController> _phaseControllers;
+  late List<RxSet<String>> _selectedDeliverables;
+  late List<RxList<String>> _allDeliverables;
+
+  @override
+  void initState() {
+    super.initState();
+    _phaseControllers = widget.initialPhases
+        .map((p) => TextEditingController(text: p.name))
+        .toList();
+    _selectedDeliverables = widget.initialPhases
+        .map((p) => p.deliverables.toSet().obs)
+        .toList();
+    _allDeliverables = widget.initialPhases
+        .map((p) => p.deliverables.toList().obs)
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    for (final c in _phaseControllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  void _onConfirm() {
+    final phases = List.generate(_phaseControllers.length, (i) =>
+      ProjectPhase(
+        name: _phaseControllers[i].text.trim(),
+        deliverables: _selectedDeliverables[i].toList(),
+      ),
+    );
+    Navigator.of(context).pop(phases);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Tùy chỉnh các giai đoạn & deliverables',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              SizedBox(height: 16),
+              ...List.generate(widget.initialPhases.length, (i) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _phaseControllers[i],
+                          decoration: InputDecoration(
+                            labelText: 'Tên giai đoạn',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  CustomChoiceChipGroup(
+                    selectedItems: _selectedDeliverables[i],
+                    options: _allDeliverables[i],
+                  ),
+                  SizedBox(height: 20),
+                ],
+              )),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text('Hủy'),
+                  ),
+                  SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _onConfirm,
+                    child: Text('Tạo Dashboard'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

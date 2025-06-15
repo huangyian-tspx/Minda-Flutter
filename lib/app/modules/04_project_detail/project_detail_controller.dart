@@ -9,8 +9,10 @@ import '../../core/base/base_controller.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_logger.dart';
 import '../../data/models/api_response.dart';
+import '../../data/models/project_dashboard_model.dart';
 import '../../data/models/project_history.dart';
 import '../../data/models/topic_suggestion_model.dart';
+import '../../data/services/ai_prompt_service.dart';
 import '../../data/services/database_service.dart';
 import '../../data/services/notion_api_service.dart';
 import '../../data/services/notion_history_service.dart';
@@ -185,15 +187,19 @@ class ProjectDetailController extends BaseController {
 
       // Create consistent projectId using title and basic topic id
       final projectId =
+          _currentProjectId ??
           '${topic.title}_${_basicTopic?.id ?? DateTime.now().millisecondsSinceEpoch}';
       _currentProjectId = projectId; // Lưu lại để dùng cho favorite
+
+      // Lấy category đúng nhất: luôn lấy từ _category (đã được truyền đúng từ màn trước)
+      final category = _category ?? 'safe';
 
       // Lưu TOÀN BỘ thông tin chi tiết của ProjectTopic
       var history = ProjectHistory(
         projectId: projectId,
         title: topic.title,
         description: topic.description,
-        category: _category ?? 'safe',
+        category: category,
         viewedAt: DateTime.now(),
         projectData: jsonEncode({
           // Lưu toàn bộ thông tin chi tiết
@@ -226,14 +232,14 @@ class ProjectDetailController extends BaseController {
                 },
               )
               .toList(),
-          'category': _category ?? 'safe',
+          'category': category,
           'timestamp': DateTime.now().toIso8601String(),
         }),
         isFavorite: isFavorite,
       );
 
       await dbService.saveProjectHistory(history);
-      AppLogger.d("Saved COMPLETE project data to history: ${topic.title}");
+      AppLogger.d("Saved COMPLETE project data to history: " + topic.title);
     } catch (e) {
       AppLogger.e("Error saving project to history: $e");
       // Don't show error to user, this is non-critical
@@ -390,6 +396,69 @@ class ProjectDetailController extends BaseController {
           colorText: Get.theme.colorScheme.onError,
         );
       }
+    }
+  }
+
+  /// Show Project Setup Dialog and handle dashboard creation
+  Future<void> showProjectSetupDialog() async {
+    if (projectTopic.value == null) return;
+    final result = await Get.dialog(
+      ProjectSetupDialog(
+        initialPhases: [
+          // Example: You can customize these based on your project model
+          ProjectPhase(
+            name: 'Giai đoạn 1: Phân tích',
+            deliverables: ['Tài liệu yêu cầu', 'Phân tích hệ thống'],
+          ),
+          ProjectPhase(
+            name: 'Giai đoạn 2: Thiết kế',
+            deliverables: ['Mockup', 'Kiến trúc DB', 'Thiết kế UI/UX'],
+          ),
+          ProjectPhase(
+            name: 'Giai đoạn 3: Phát triển',
+            deliverables: ['Source code', 'Test case', 'CI/CD'],
+          ),
+          ProjectPhase(
+            name: 'Giai đoạn 4: Triển khai',
+            deliverables: ['Tài liệu hướng dẫn', 'Demo', 'Báo cáo tổng kết'],
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+    if (result is List<ProjectPhase>) {
+      await _createDashboardWithPhases(result);
+    }
+  }
+
+  /// Handle dashboard creation with selected phases/deliverables
+  Future<void> _createDashboardWithPhases(List<ProjectPhase> phases) async {
+    try {
+      // Show loading dialog
+      Get.dialog(
+        LoadingDialog(message: 'Đang tạo dashboard dự án với AI...'),
+        barrierDismissible: false,
+      );
+      // Generate prompt for dashboard
+      final prompt = await AIPromptService.instance
+          .generateDetailedDashboardPrompt(projectTopic.value!, phases);
+      // Call OpenRouter API to get dashboard
+      final result = await OpenRouterAPIService.instance.createProjectDashboard(
+        prompt,
+      );
+      Get.back(); // Close loading
+      if (result is Success<ProjectDashboardModel>) {
+        // Navigate to dashboard screen
+        Get.toNamed(
+          '/project-dashboard',
+          arguments: {'dashboard': result.data, 'projectId': projectId},
+        );
+      } else if (result is Failure) {
+        Get.dialog(ErrorDialog(title: 'Lỗi tạo dashboard', message: ""));
+      }
+    } catch (e) {
+      Get.back();
+      Get.dialog(ErrorDialog(title: 'Lỗi', message: e.toString()));
     }
   }
 
@@ -661,3 +730,15 @@ class ProjectDetailController extends BaseController {
     );
   }
 }
+
+// In your navigation logic (for example, in SuggestionProjectCard or any goToProjectDetail function), always use:
+//
+// Get.toNamed(Routes.PROJECT_DETAIL, arguments: {
+//   'topic': topic,
+//   'category': topic.difficulty, // or topic.category if available
+// });
+//
+// In ProjectDetailController, the code is already correct:
+// _category = arguments['category'] as String?;
+//
+// So, just ensure everywhere you navigate to PROJECT_DETAIL, you pass both topic and category.

@@ -65,6 +65,18 @@ class Topic {
   List<String> get technologyNames => technologies.map((t) => t.name).toList();
 }
 
+@JsonSerializable()
+class ReferenceLink {
+  final String title;
+  final String url;
+  ReferenceLink({required this.title, required this.url});
+  factory ReferenceLink.fromJson(Map<String, dynamic> json) => ReferenceLink(
+        title: json['title']?.toString() ?? '',
+        url: json['url']?.toString() ?? '',
+      );
+  Map<String, dynamic> toJson() => {'title': title, 'url': url};
+}
+
 /// Extended version of Topic for detailed project view
 class ProjectTopic extends Topic {
   final String problemStatement;
@@ -78,6 +90,8 @@ class ProjectTopic extends Topic {
   final List<CodeExample> codeExamples;
   final List<String> potentialChallenges;
   final List<String> resourcesAndTutorials;
+  final List<ReferenceLink> referenceLinks;
+  final List<ReferenceLink> githubLinks;
 
   ProjectTopic({
     required super.id,
@@ -99,6 +113,8 @@ class ProjectTopic extends Topic {
     this.codeExamples = const [],
     this.potentialChallenges = const [],
     this.resourcesAndTutorials = const [],
+    this.referenceLinks = const [],
+    this.githubLinks = const [],
   });
 
   /// Create ProjectTopic from AI JSON response
@@ -177,6 +193,26 @@ class ProjectTopic extends Topic {
             .toList() ??
         [];
 
+    // Parse referenceLinks
+    final referenceLinksList = (json['referenceLinks'] as List?)?.map((item) {
+      if (item is Map<String, dynamic>) {
+        return ReferenceLink.fromJson(item);
+      } else if (item is Map) {
+        return ReferenceLink.fromJson(Map<String, dynamic>.from(item));
+      }
+      return null;
+    }).whereType<ReferenceLink>().toList() ?? [];
+
+    // Parse githubLinks
+    final githubLinksList = (json['githubLinks'] as List?)?.map((item) {
+      if (item is Map<String, dynamic>) {
+        return ReferenceLink.fromJson(item);
+      } else if (item is Map) {
+        return ReferenceLink.fromJson(Map<String, dynamic>.from(item));
+      }
+      return null;
+    }).whereType<ReferenceLink>().toList() ?? [];
+
     return ProjectTopic(
       id: basicTopic.id,
       title: basicTopic.title,
@@ -202,6 +238,8 @@ class ProjectTopic extends Topic {
       // Default empty arrays for removed fields
       potentialChallenges: const [],
       resourcesAndTutorials: const [],
+      referenceLinks: referenceLinksList,
+      githubLinks: githubLinksList,
     );
   }
 

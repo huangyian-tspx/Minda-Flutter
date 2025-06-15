@@ -79,15 +79,12 @@ class ProjectHistory {
   ProjectTopic get projectTopic {
     try {
       AppLogger.d("Parsing project data for: $title");
-
       if (projectData.isEmpty) {
         AppLogger.e("Project data is empty for: $title");
         return _createFallbackProjectTopic();
       }
-
       final Map<String, dynamic> json = jsonDecode(projectData);
-
-      // Parse coreTechStack với null safety
+      // Parse coreTechStack
       final coreTechStackList = <Technology>[];
       final techStackData = json['coreTechStack'];
       if (techStackData is List) {
@@ -102,8 +99,7 @@ class ProjectHistory {
           }
         }
       }
-
-      // Parse coreFeatures với null safety
+      // Parse coreFeatures
       final coreFeaturesList = <ExpandableItemData>[];
       final coreFeaturesData = json['coreFeatures'];
       if (coreFeaturesData is List) {
@@ -118,8 +114,7 @@ class ProjectHistory {
           }
         }
       }
-
-      // Parse advancedFeatures với null safety
+      // Parse advancedFeatures
       final advancedFeaturesList = <ExpandableItemData>[];
       final advancedFeaturesData = json['advancedFeatures'];
       if (advancedFeaturesData is List) {
@@ -134,8 +129,7 @@ class ProjectHistory {
           }
         }
       }
-
-      // Parse foundationalKnowledge với null safety
+      // Parse foundationalKnowledge
       final foundationalKnowledgeList = <String>[];
       final foundationalData = json['foundationalKnowledge'];
       if (foundationalData is List) {
@@ -143,8 +137,7 @@ class ProjectHistory {
           foundationalKnowledgeList.add(item?.toString() ?? '');
         }
       }
-
-      // Parse specificKnowledge với null safety
+      // Parse specificKnowledge
       final specificKnowledgeList = <KnowledgeItem>[];
       final specificData = json['specificKnowledge'];
       if (specificData is List) {
@@ -163,7 +156,6 @@ class ProjectHistory {
               default:
                 difficulty = KnowledgeDifficulty.easy;
             }
-
             specificKnowledgeList.add(
               KnowledgeItem(
                 title: item['title']?.toString() ?? '',
@@ -173,8 +165,7 @@ class ProjectHistory {
           }
         }
       }
-
-      // Parse implementationSteps với null safety
+      // Parse implementationSteps
       final implementationStepsList = <String>[];
       final implementationData = json['implementationSteps'];
       if (implementationData is List) {
@@ -182,8 +173,7 @@ class ProjectHistory {
           implementationStepsList.add(item?.toString() ?? '');
         }
       }
-
-      // Parse codeExamples với null safety
+      // Parse codeExamples
       final codeExamplesList = <CodeExample>[];
       final codeExamplesData = json['codeExamples'];
       if (codeExamplesData is List) {
@@ -204,7 +194,24 @@ class ProjectHistory {
           }
         }
       }
-
+      // Parse referenceLinks
+      final referenceLinksList = (json['referenceLinks'] as List?)?.map((item) {
+        if (item is Map<String, dynamic>) {
+          return ReferenceLink.fromJson(item);
+        } else if (item is Map) {
+          return ReferenceLink.fromJson(Map<String, dynamic>.from(item));
+        }
+        return null;
+      }).whereType<ReferenceLink>().toList() ?? [];
+      // Parse githubLinks
+      final githubLinksList = (json['githubLinks'] as List?)?.map((item) {
+        if (item is Map<String, dynamic>) {
+          return ReferenceLink.fromJson(item);
+        } else if (item is Map) {
+          return ReferenceLink.fromJson(Map<String, dynamic>.from(item));
+        }
+        return null;
+      }).whereType<ReferenceLink>().toList() ?? [];
       // Create basic Topic first
       final basicTopic = Topic(
         id: json['id']?.toString() ?? projectId,
@@ -216,7 +223,6 @@ class ProjectHistory {
         duration: 3,
         feasibilityAssessment: 'Đã được lưu từ lịch sử',
       );
-
       // Create ProjectTopic
       return ProjectTopic(
         id: basicTopic.id,
@@ -240,11 +246,14 @@ class ProjectHistory {
         specificKnowledge: specificKnowledgeList,
         implementationSteps: implementationStepsList,
         codeExamples: codeExamplesList,
+        referenceLinks: referenceLinksList,
+        githubLinks: githubLinksList,
+        potentialChallenges: const [],
+        resourcesAndTutorials: const [],
       );
     } catch (e) {
       AppLogger.e("Error parsing project data for $title: $e");
       AppLogger.e("Project data content: $projectData");
-
       return _createFallbackProjectTopic();
     }
   }
